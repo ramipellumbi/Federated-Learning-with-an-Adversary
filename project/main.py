@@ -7,8 +7,8 @@ import torch
 
 from project.federated.client.public_client import PublicClient
 from project.federated.client.private_client import PrivateClient
-from project.data_loaders.mnist.data_loader import DataLoader
 from project.federated.server import Server
+from project.data_loaders.mnist.data_loader import DataLoader
 from project.models.mnist.mnist_cnn import MnistCNN as Model
 
 # Get the absolute path of the project root
