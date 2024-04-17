@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Union
 
 import pandas as pd
+from tqdm import tqdm
 import torch
 import torch.nn as nn
 import torch.utils.data
@@ -119,8 +120,10 @@ class Server:
         self._model.eval()
         correct = 0
         total = 0
+        iterable = tqdm(self._validation_data)
+        iterable.set_description_str("Validating model")
         with torch.no_grad():
-            for images, labels in self._validation_data:
+            for images, labels in iterable:
                 images, labels = images.to(self._device), labels.to(self._device)
                 outputs = self._model(images)
                 _, predicted = torch.max(outputs.data, 1)
@@ -199,7 +202,6 @@ class Server:
             contribution / total_new_contribution for contribution in new_contribution
         ]
         self._client_score = client_contributions.copy()
-        print([c for c in client_contributions])
 
         with torch.no_grad():
             for client_weight, weight_fraction in zip(

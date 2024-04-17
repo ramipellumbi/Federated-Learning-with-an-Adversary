@@ -16,7 +16,9 @@ from .base_client import BaseClient
 
 class PrivateClient(BaseClient):
     """
-    PrivateClient inherits client and attaches optimizer to a privacy engine
+    PrivateClient inherits base client and modifies the model,
+    optimizer, and dataloader to train with differential privacy
+    via Opacus.
     """
 
     def __init__(

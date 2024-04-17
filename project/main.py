@@ -23,19 +23,41 @@ if project_root not in sys.path:
 if __name__ == "__main__":
     mps_device = torch.device("mps")
 
-    n_clients = 1
-    n_adv = 0
-    num_epochs = 2
-    batch_size = 64
+    # get inputs from argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--n_clients", type=int, default=1)
+    parser.add_argument("--n_adv", type=int, default=0)
+    parser.add_argument("--n_epochs", type=int, default=10)
+    parser.add_argument("--b", type=int, default=64)
+    parser.add_argument("--p", type=bool, default=False)
+    parser.add_argument("--eps", type=float, default=None)
+    parser.add_argument("--delta", type=float, default=None)
+    args = parser.parse_args()
+
+    n_clients = args.n_clients
+    n_adv = args.n_adv
+    num_epochs = args.n_epochs
+    batch_size = args.b
+
+    should_use_private = args.p
+    if should_use_private:
+        if not args.eps or not args.delta:
+            raise ValueError(
+                "If you want to use private clients, you must provide epsilon and delta"
+            )
+    target_epsilon = args.eps
+    target_delta = args.delta
 
     dataloader = DataLoader(
         batch_size=batch_size,
         device=mps_device,
+        test_split=0.2,
         val_split=0.2,
         n_clients=n_clients,
         num_adversaries=n_adv,
     )
-    aggregator = Server(
+
+    server = Server(
         model=Model(),
         device=mps_device,
         validation_data=dataloader.val_loader,
@@ -49,6 +71,17 @@ if __name__ == "__main__":
             device=mps_device,
             data=dataloader.train_loaders[i],
         )
+        if not should_use_private
+        else PrivateClient(
+            id=f"{i}",
+            model=Model(),
+            device=mps_device,
+            data=dataloader.train_loaders[i],
+            max_grad_norm=1.0,
+            num_epochs=num_epochs,
+            target_epsilon=target_epsilon,
+            target_delta=target_delta,
+        )
         for i in range(n_clients)
     ]
 
@@ -57,25 +90,25 @@ if __name__ == "__main__":
         # train each client
         for i in range(n_clients):
             current_client = clients[i]
-            current_client.update_parameters(aggregator.model.state_dict())
+            current_client.update_parameters(server.model.state_dict())
             current_client.train_epoch()
-            aggregator.add_client_parameters(
+            server.add_client_parameters(
                 current_client.model.state_dict(),
                 current_client.num_samples,
             )
-        aggregator.aggregate_parameters()
+        server.aggregate_parameters()
         if epoch % 2 == 0 or epoch == num_epochs - 1:
-            aggregator.evaluate_model()
+            server.evaluate_model()
 
     # evaluate the model on the test set
 
     with torch.no_grad():
-        aggregator.model.eval()
+        server.model.eval()
         correct = 0
         total = 0
         for images, labels in dataloader.test_loader:
             images, labels = images.to(mps_device), labels.to(mps_device)
-            outputs = aggregator.model(images)
+            outputs = server.model(images)
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
@@ -91,5 +124,7 @@ if __name__ == "__main__":
 
     # combine all dataframes to one dataframe
     df = pd.concat(all_dfs)
-    df.to_csv("non_private_train_history.csv", index=False)
-    aggregator.val_performance.to_csv("non_private_val_performance.csv", index=False)
+    client_save_name = f"project/results/n_clients_{n_clients}_n_adv_{n_adv}_n_epochs_{num_epochs}_batch_size_{batch_size}_private_{should_use_private}_eps_{target_epsilon}_delta_{target_delta}.csv"
+    df.to_csv(client_save_name, index=False)
+    server_save_name = f"project/results/n_clients_{n_clients}_n_adv_{n_adv}_n_epochs_{num_epochs}_batch_size_{batch_size}_private_{should_use_private}_eps_{target_epsilon}_delta_{target_delta}_server.csv"
+    server.val_performance.to_csv(server_save_name, index=False)
