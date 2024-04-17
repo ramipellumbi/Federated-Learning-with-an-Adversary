@@ -4,7 +4,6 @@ import sys
 
 import pandas as pd
 import torch
-import torch.nn.functional as F
 
 from project.federated.client.public_client import PublicClient
 from project.federated.client.private_client import PrivateClient
@@ -74,7 +73,7 @@ if __name__ == "__main__":
         if not should_use_private
         else PrivateClient(
             id=f"{i}",
-            model=Model(),
+            model=Model(dropout=False),
             device=mps_device,
             data=dataloader.train_loaders[i],
             max_grad_norm=1.0,
