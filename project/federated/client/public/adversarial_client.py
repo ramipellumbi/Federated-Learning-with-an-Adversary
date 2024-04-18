@@ -22,7 +22,7 @@ class AdversarialClient(PublicClient):
         losses = []
         for x, y in tqdm(
             self._data,
-            desc=f"Adversarial Client {self._id} | Epoch {self._epochs_trained}",
+            desc=f"{self._id} | Epoch {self._epochs_trained}",
         ):
             x, y = x.to(self._device), y.to(self._device)
             yhat = self._model(x)

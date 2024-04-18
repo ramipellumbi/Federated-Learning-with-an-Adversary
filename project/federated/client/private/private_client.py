@@ -97,7 +97,7 @@ class PrivateClient(BaseClient):
         ) as memory_safe_loader:
             for x, y in tqdm(
                 memory_safe_loader,
-                desc=f"Client {self._id} | Epoch {self._epochs_trained}",
+                desc=f"{self._id} | Epoch {self._epochs_trained}",
             ):
                 x, y = x.to(self._device), y.to(self._device)
                 self._optimizer.zero_grad()
@@ -122,7 +122,7 @@ class PrivateClient(BaseClient):
         delta: Optional[float] = None,
     ):
         print(
-            f"Client {self._id} | Epoch {self._epochs_trained} | Loss: {loss:.4f} | Tr. Acc: {training_accuracy:.4f} | ε = {epsilon:.4f} | δ = {self._td}"
+            f"{self._id} | Epoch {self._epochs_trained} | Loss: {loss:.4f} | Tr. Acc: {training_accuracy:.4f} | ε = {epsilon:.4f} | δ = {self._td}"
         )
 
     def update_parameters(self, server_state_dict: Dict[str, Any]):

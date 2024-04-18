@@ -72,7 +72,7 @@ if __name__ == "__main__":
     # create adversarial clients for the first n_adv clients and public clients for the rest
     adv_clients = [
         AdversarialClient(
-            id=f"{i}",
+            id=f"Adversarial Client {i}",
             model=Model(),
             device=mps_device,
             data=dataloader.train_loaders[i],
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     non_adv_clients = [
         (
             PublicClient(
-                id=f"{i}",
+                id=f"Client {i}",
                 model=Model(),
                 device=mps_device,
                 data=dataloader.train_loaders[i],

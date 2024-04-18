@@ -64,7 +64,7 @@ class BaseClient(ABC):
         self._model.eval()
         correct = 0
         with torch.no_grad():
-            for x, y in tqdm(self._data, desc=f"Client {self._id} | Train Accuracy"):
+            for x, y in tqdm(self._data, desc=f"{self._id} | Train Accuracy"):
                 x, y = x.to(self._device), y.to(self._device)
                 yhat = self._model(x)
                 correct += (yhat.argmax(1) == y).sum().item()
@@ -106,7 +106,7 @@ class BaseClient(ABC):
         """
         self._model.train()
         loss, tr_acc, epsilon, delta = self.train_one_epoch()
-        self._epochs_trained += 1
+
         self._train_history.append(
             {
                 "client": self._id,
@@ -120,3 +120,4 @@ class BaseClient(ABC):
         self.log_epoch(
             loss=loss, training_accuracy=tr_acc, epsilon=epsilon, delta=delta
         )
+        self._epochs_trained += 1

@@ -42,7 +42,9 @@ if __name__ == "__main__":
         plt.close()
 
     adversarial_data_loader = DataLoader(
-        batch_size=64, device=device("mps"), n_clients=10, num_adversaries=1
+        batch_size=64,
+        device=device("mps"),
+        n_clients=10,
     )
     # plot the label distribution for the adversarial set
     adv_loader = adversarial_data_loader._train_loaders[0]

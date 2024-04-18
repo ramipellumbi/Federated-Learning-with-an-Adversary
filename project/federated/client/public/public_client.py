@@ -39,9 +39,7 @@ class PublicClient(BaseClient):
     ):
         losses = []
         self._model.train()
-        for x, y in tqdm(
-            self._data, desc=f"Client {self._id} | Epoch {self._epochs_trained}"
-        ):
+        for x, y in tqdm(self._data, desc=f"{self._id} | Epoch {self._epochs_trained}"):
             x, y = x.to(self._device), y.to(self._device)
             yhat = self._model(x)
             self._optimizer.zero_grad()
@@ -64,7 +62,7 @@ class PublicClient(BaseClient):
         delta: Optional[float] = None,
     ) -> None:
         print(
-            f"Client {self._id} | Epoch {self._epochs_trained} | Loss: {loss:.4f} | Tr. Acc: {training_accuracy:.4f}"
+            f"{self._id} | Epoch {self._epochs_trained} | Loss: {loss:.4f} | Tr. Acc: {training_accuracy:.4f}"
         )
 
     def update_parameters(self, server_state_dict: Dict[str, Any]):
