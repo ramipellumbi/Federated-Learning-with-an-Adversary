@@ -5,9 +5,12 @@ import sys
 import pandas as pd
 import torch
 
+from project.federated.client.private.private_client import PrivateClient
+from project.federated.client.private.adversarial_client import (
+    AdversarialClient as PrivateAdversarialClient,
+)
 from project.federated.client.public.public_client import PublicClient
 from project.federated.client.public.adversarial_client import AdversarialClient
-from project.federated.client.private.private_client import PrivateClient
 from project.federated.server import Server
 from project.data_loaders.mnist.data_loader import DataLoader
 from project.models.mnist.mnist_cnn import MnistCNN as Model
@@ -20,6 +23,33 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 
+def validate_command_line_arguments(args):
+    # validate inputs
+    assert args.n_clients > 0, "Number of clients must be greater than 0"
+    assert args.n_adv > 0, "Number of adversaries must be greater than 0"
+    assert (
+        args.n_adv < args.n_clients
+    ), "Number of adversaries must be less than number of clients"
+    assert args.noise_multiplier > 0, "Noise multiplier must be greater than 0"
+    assert args.n_epochs > 0, "Number of epochs must be greater than 0"
+    assert isinstance(
+        args.use_differential_privacy, bool
+    ), "Use differential privacy must be a boolean"
+    assert args.batch_size > 0, "Batch size must be greater than 0"
+    assert isinstance(
+        args.enable_adv_protection, bool
+    ), "Enable adv protection must be a boolean"
+    assert args.eps is None or args.eps > 0, "Epsilon must be greater than 0"
+    assert args.delta is None or args.delta > 0, "Delta must be greater than 0"
+
+    should_use_private = args.use_differential_privacy
+    if should_use_private:
+        if not args.eps or not args.delta:
+            raise ValueError(
+                "If you want to use private clients, you must provide epsilon and delta"
+            )
+
+
 if __name__ == "__main__":
     mps_device = torch.device("mps")
 
@@ -27,32 +57,26 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--n_clients", type=int, default=10)
     parser.add_argument("--n_adv", type=int, default=2)
+    parser.add_argument("--noise_multiplier", type=float, default=0.3)
     parser.add_argument("--n_epochs", type=int, default=5)
-    parser.add_argument("--protection", type=bool, default=True)
-    parser.add_argument("--b", type=int, default=64)
-    parser.add_argument("--p", type=bool, default=False)
+    parser.add_argument("--enable_adv_protection", type=bool, default=False)
+    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--use_differential_privacy", type=bool, default=False)
     parser.add_argument("--eps", type=float, default=None)
     parser.add_argument("--delta", type=float, default=None)
     args = parser.parse_args()
 
+    validate_command_line_arguments(args)
+
     n_clients = args.n_clients
     n_adv = args.n_adv
     num_epochs = args.n_epochs
-    batch_size = args.b
-    enable_adv_protection = args.protection
-
-    assert (
-        n_adv < n_clients
-    ), "Number of adversaries must be less than number of clients"
-
-    should_use_private = args.p
-    if should_use_private:
-        if not args.eps or not args.delta:
-            raise ValueError(
-                "If you want to use private clients, you must provide epsilon and delta"
-            )
+    batch_size = args.batch_size
+    enable_adv_protection = args.enable_adv_protection
+    noise_multiplier = args.noise_multiplier
     target_epsilon = args.eps
     target_delta = args.delta
+    should_use_private = args.use_differential_privacy
 
     dataloader = DataLoader(
         batch_size=batch_size,
@@ -76,6 +100,19 @@ if __name__ == "__main__":
             model=Model(),
             device=mps_device,
             data=dataloader.train_loaders[i],
+            noise_multiplier=noise_multiplier,
+        )
+        if not should_use_private
+        else PrivateAdversarialClient(
+            id=f"Adversarial Client {i}",
+            model=Model(dropout=False),
+            device=mps_device,
+            data=dataloader.train_loaders[i],
+            max_grad_norm=1.0,
+            num_epochs=num_epochs,
+            target_epsilon=target_epsilon,
+            target_delta=target_delta,
+            noise_multiplier=noise_multiplier,
         )
         for i in range(n_adv)
     ]

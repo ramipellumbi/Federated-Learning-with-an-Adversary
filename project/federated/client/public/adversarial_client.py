@@ -14,12 +14,13 @@ class AdversarialClient(PublicClient):
         model: nn.Module,
         device: torch.device,
         data: torch.utils.data.DataLoader,
+        noise_multiplier: float,
     ):
         super().__init__(id=id, model=model, device=device, data=data)
+        self._noise_multiplier = noise_multiplier
 
     def train_one_epoch(
         self,
-        epsilon: float = 0.3,
     ):
         losses = []
         for x, y in tqdm(
@@ -37,7 +38,9 @@ class AdversarialClient(PublicClient):
                 for param in self._model.parameters():
                     if param.grad is not None:
                         # Instead of altering input, the gradient is modified
-                        param.grad += epsilon * -1 * torch.sign(param.grad)
+                        param.grad += (
+                            self._noise_multiplier * -1 * torch.sign(param.grad)
+                        )
 
             losses.append(loss.item())
             self._optimizer.step()
