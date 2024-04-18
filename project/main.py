@@ -5,8 +5,9 @@ import sys
 import pandas as pd
 import torch
 
-from project.federated.client.public_client import PublicClient
-from project.federated.client.private_client import PrivateClient
+from project.federated.client.public.public_client import PublicClient
+from project.federated.client.public.adversarial_client import AdversarialClient
+from project.federated.client.private.private_client import PrivateClient
 from project.federated.server import Server
 from project.data_loaders.mnist.data_loader import DataLoader
 from project.models.mnist.mnist_cnn import MnistCNN as Model
@@ -24,10 +25,10 @@ if __name__ == "__main__":
 
     # get inputs from argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n_clients", type=int, default=1)
-    parser.add_argument("--n_adv", type=int, default=0)
-    parser.add_argument("--n_epochs", type=int, default=10)
-    parser.add_argument("--protection", type=bool, default=False)
+    parser.add_argument("--n_clients", type=int, default=10)
+    parser.add_argument("--n_adv", type=int, default=2)
+    parser.add_argument("--n_epochs", type=int, default=5)
+    parser.add_argument("--protection", type=bool, default=True)
     parser.add_argument("--b", type=int, default=64)
     parser.add_argument("--p", type=bool, default=False)
     parser.add_argument("--eps", type=float, default=None)
@@ -39,6 +40,10 @@ if __name__ == "__main__":
     num_epochs = args.n_epochs
     batch_size = args.b
     enable_adv_protection = args.protection
+
+    assert (
+        n_adv < n_clients
+    ), "Number of adversaries must be less than number of clients"
 
     should_use_private = args.p
     if should_use_private:
@@ -55,7 +60,6 @@ if __name__ == "__main__":
         test_split=0.2,
         val_split=0.2,
         n_clients=n_clients,
-        num_adversaries=n_adv,
     )
 
     server = Server(
@@ -65,7 +69,18 @@ if __name__ == "__main__":
         enable_adversary_protection=enable_adv_protection,
     )
 
-    clients = [
+    # create adversarial clients for the first n_adv clients and public clients for the rest
+    adv_clients = [
+        AdversarialClient(
+            id=f"{i}",
+            model=Model(),
+            device=mps_device,
+            data=dataloader.train_loaders[i],
+        )
+        for i in range(n_adv)
+    ]
+
+    non_adv_clients = [
         (
             PublicClient(
                 id=f"{i}",
@@ -85,8 +100,10 @@ if __name__ == "__main__":
                 target_delta=target_delta,
             )
         )
-        for i in range(n_clients)
+        for i in range(n_adv, n_clients)
     ]
+
+    clients = adv_clients + non_adv_clients
 
     # Run 50 epochs on each client
     for epoch in range(num_epochs):

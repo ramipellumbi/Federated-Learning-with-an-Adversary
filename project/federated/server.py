@@ -200,6 +200,7 @@ class Server:
             contribution / total_new_contribution for contribution in new_contribution
         ]
         self._client_score = client_contributions.copy()
+        print(f"Client contributions: {client_contributions}")
 
         with torch.no_grad():
             for client_weight, weight_fraction in zip(

@@ -18,7 +18,6 @@ def create_mislabeled_dataset(
     Modify the dataset to have mislabeled targets intentionally.
     """
     # Deepcopy to avoid modifying the original dataset
-
     adversarial_dataset: Any = copy.deepcopy(dataset)
     all_labels = list(set(adversarial_dataset.dataset.targets.numpy()))
 
@@ -49,13 +48,13 @@ class DataLoader:
         val_split: float = 0.1,
         test_split: float = 0.1,
         n_clients: int = 1,
-        num_adversaries: int = 0,
+        # num_adversaries: int = 0,
     ) -> None:
         # assert ratios make sense
         assert 0.0 < val_split < 1.0
         assert 0.0 < test_split < 1.0
         assert 0.0 < val_split + test_split < 1.0
-        assert 0 <= num_adversaries <= n_clients
+        # assert 0 <= num_adversaries <= n_clients
 
         self.batch_size = batch_size
         self.device = device
@@ -108,11 +107,11 @@ class DataLoader:
         )
 
         # set up adversarial dataset
-        if num_adversaries > 0:
-            for i in range(num_adversaries):
-                print(f"Creating adversarial dataset {i}")
-                dset = self.train_datasets[i]
-                self.train_datasets[i] = create_mislabeled_dataset(dset)
+        # if num_adversaries > 0:
+        #     for i in range(num_adversaries):
+        #         print(f"Creating adversarial dataset {i}")
+        #         dset = self.train_datasets[i]
+        #         self.train_datasets[i] = create_mislabeled_dataset(dset)
 
         self.val_dataset: Subset[MNIST] = Subset(mnist_train, val_indices)
         self.test_dataset: Union[MNIST, Subset[MNIST]] = (

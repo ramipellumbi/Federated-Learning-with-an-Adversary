@@ -9,7 +9,7 @@ from tqdm import tqdm
 from torchvision.datasets.mnist import MNIST
 
 
-from .base_client import BaseClient
+from project.federated.client.base_client import BaseClient
 
 
 class PublicClient(BaseClient):

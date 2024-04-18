@@ -11,7 +11,7 @@ import torch.utils.data
 from torchvision.datasets.mnist import MNIST
 from tqdm import tqdm
 
-from .base_client import BaseClient
+from project.federated.client.base_client import BaseClient
 
 
 class PrivateClient(BaseClient):
