@@ -27,6 +27,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_clients", type=int, default=1)
     parser.add_argument("--n_adv", type=int, default=0)
     parser.add_argument("--n_epochs", type=int, default=10)
+    parser.add_argument("--protection", type=bool, default=False)
     parser.add_argument("--b", type=int, default=64)
     parser.add_argument("--p", type=bool, default=False)
     parser.add_argument("--eps", type=float, default=None)
@@ -37,6 +38,7 @@ if __name__ == "__main__":
     n_adv = args.n_adv
     num_epochs = args.n_epochs
     batch_size = args.b
+    enable_adv_protection = args.protection
 
     should_use_private = args.p
     if should_use_private:
@@ -60,26 +62,28 @@ if __name__ == "__main__":
         model=Model(),
         device=mps_device,
         validation_data=dataloader.val_loader,
-        enable_adversary_protection=False,
+        enable_adversary_protection=enable_adv_protection,
     )
 
     clients = [
-        PublicClient(
-            id=f"{i}",
-            model=Model(),
-            device=mps_device,
-            data=dataloader.train_loaders[i],
-        )
-        if not should_use_private
-        else PrivateClient(
-            id=f"{i}",
-            model=Model(dropout=False),
-            device=mps_device,
-            data=dataloader.train_loaders[i],
-            max_grad_norm=1.0,
-            num_epochs=num_epochs,
-            target_epsilon=target_epsilon,
-            target_delta=target_delta,
+        (
+            PublicClient(
+                id=f"{i}",
+                model=Model(),
+                device=mps_device,
+                data=dataloader.train_loaders[i],
+            )
+            if not should_use_private
+            else PrivateClient(
+                id=f"{i}",
+                model=Model(dropout=False),
+                device=mps_device,
+                data=dataloader.train_loaders[i],
+                max_grad_norm=1.0,
+                num_epochs=num_epochs,
+                target_epsilon=target_epsilon,
+                target_delta=target_delta,
+            )
         )
         for i in range(n_clients)
     ]
@@ -123,7 +127,7 @@ if __name__ == "__main__":
 
     # combine all dataframes to one dataframe
     df = pd.concat(all_dfs)
-    client_save_name = f"project/results/n_clients_{n_clients}_n_adv_{n_adv}_n_epochs_{num_epochs}_batch_size_{batch_size}_private_{should_use_private}_eps_{target_epsilon}_delta_{target_delta}.csv"
+    client_save_name = f"project/results/n_clients_{n_clients}_n_adv_{n_adv}_enable_adv_{enable_adv_protection}_n_epochs_{num_epochs}_batch_size_{batch_size}_private_{should_use_private}_eps_{target_epsilon}_delta_{target_delta}.csv"
     df.to_csv(client_save_name, index=False)
-    server_save_name = f"project/results/n_clients_{n_clients}_n_adv_{n_adv}_n_epochs_{num_epochs}_batch_size_{batch_size}_private_{should_use_private}_eps_{target_epsilon}_delta_{target_delta}_server.csv"
+    server_save_name = f"project/results/n_clients_{n_clients}_n_adv_{n_adv}_enable_adv_{enable_adv_protection}_n_epochs_{num_epochs}_batch_size_{batch_size}_private_{should_use_private}_eps_{target_epsilon}_delta_{target_delta}_server.csv"
     server.val_performance.to_csv(server_save_name, index=False)

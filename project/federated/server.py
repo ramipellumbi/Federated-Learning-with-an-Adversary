@@ -120,10 +120,8 @@ class Server:
         self._model.eval()
         correct = 0
         total = 0
-        iterable = tqdm(self._validation_data)
-        iterable.set_description_str("Validating model")
         with torch.no_grad():
-            for images, labels in iterable:
+            for images, labels in tqdm(self._validation_data, desc="Validating model"):
                 images, labels = images.to(self._device), labels.to(self._device)
                 outputs = self._model(images)
                 _, predicted = torch.max(outputs.data, 1)

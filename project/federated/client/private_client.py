@@ -95,7 +95,10 @@ class PrivateClient(BaseClient):
             max_physical_batch_size=64,
             optimizer=self._optimizer,
         ) as memory_safe_loader:
-            for x, y in tqdm(memory_safe_loader):
+            for x, y in tqdm(
+                memory_safe_loader,
+                desc=f"Client {self._id} | Epoch {self._epochs_trained}",
+            ):
                 x, y = x.to(self._device), y.to(self._device)
                 self._optimizer.zero_grad()
                 yhat = self._model(x)

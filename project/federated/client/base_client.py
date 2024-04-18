@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.utils.data
 from torchvision.datasets.mnist import MNIST
+from tqdm import tqdm
 
 
 class BaseClient(ABC):
@@ -63,7 +64,7 @@ class BaseClient(ABC):
         self._model.eval()
         correct = 0
         with torch.no_grad():
-            for x, y in self._data:
+            for x, y in tqdm(self._data, desc=f"Client {self._id} | Train Accuracy"):
                 x, y = x.to(self._device), y.to(self._device)
                 yhat = self._model(x)
                 correct += (yhat.argmax(1) == y).sum().item()

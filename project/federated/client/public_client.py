@@ -39,9 +39,9 @@ class PublicClient(BaseClient):
     ):
         losses = []
         self._model.train()
-        iterable = tqdm(self._data)
-        iterable.set_description(f"Client {self._id} | Epoch {self._epochs_trained}")
-        for x, y in iterable:
+        for x, y in tqdm(
+            self._data, desc=f"Client {self._id} | Epoch {self._epochs_trained}"
+        ):
             x, y = x.to(self._device), y.to(self._device)
             yhat = self._model(x)
             self._optimizer.zero_grad()
