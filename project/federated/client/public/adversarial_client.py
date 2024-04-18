@@ -1,4 +1,6 @@
 import torch
+import torch.nn as nn
+import torch.utils.data
 from tqdm import tqdm
 
 from .public_client import PublicClient
@@ -9,9 +11,9 @@ class AdversarialClient(PublicClient):
         self,
         *,
         id: str,
-        model,
-        device,
-        data,
+        model: nn.Module,
+        device: torch.device,
+        data: torch.utils.data.DataLoader,
     ):
         super().__init__(id=id, model=model, device=device, data=data)
 
