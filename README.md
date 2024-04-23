@@ -1,4 +1,4 @@
-# Federated-Learning-with-an-Adversary
+# Federated Learning Performance Under Byzantine White Box Attacks
 
 This project implements a federated learning system with the MNIST dataset. It simulates a federated learning environment with multiple types of clients, including public, private, adversarial, and private adversarial. The project is designed to handle experiments under different settings, such as varying the number of clients, the presence of adversarial clients, and the application of differential privacy techniques.
 
