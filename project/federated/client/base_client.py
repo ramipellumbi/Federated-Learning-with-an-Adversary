@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
+from itertools import cycle, islice
 from typing import Any, Dict, Iterator, List, Tuple, Optional, Union
 
+from opacus.optimizers import DPOptimizer
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -34,6 +36,12 @@ class BaseClient(ABC):
 
         self._train_history: List[Dict[str, Union[str, Optional[float]]]] = []
 
+        self._current_index = 0
+        self._dataset_completed = False
+
+        self._weight_attack = None
+        self._noise_multiplier = None
+
     @property
     def train_history(self) -> pd.DataFrame:
         """
@@ -57,6 +65,32 @@ class BaseClient(ABC):
         """
         return self._num_samples
 
+    def set_weight_attack(self, weight_attack):
+        self._weight_attack = weight_attack
+
+    def set_noise_multiplier(self, noise_multiplier: float):
+        self._noise_multiplier = noise_multiplier
+
+    def set_model(self, model: nn.Module):
+        """
+        Set the model of the client
+        """
+        self._model = model
+        self._model.to(self._device)
+
+    def set_optimizer(self, optimizer: Union[torch.optim.Optimizer, DPOptimizer]):
+        """
+        Set the optimizer of the client
+        """
+        self._optimizer = optimizer
+
+    def set_data_loader(self, data: torch.utils.data.DataLoader[MNIST]):
+        """
+        Set the data of the client
+        """
+        self._data = data
+        self._num_samples = len(data)
+
     def _get_training_accuracy(self):
         """
         Accuracy of the current model on the training data
@@ -70,12 +104,56 @@ class BaseClient(ABC):
                 correct += (yhat.argmax(1) == y).sum().item()
         return correct / self._num_samples
 
+    def _train_communication_round(
+        self, data_loader: torch.utils.data.DataLoader[MNIST], L: int
+    ):
+        if (
+            self._dataset_completed
+        ):  # Reset if dataset was fully iterated in previous training
+            self._current_index = 0
+            self._dataset_completed = False
+
+        self._model.train()
+        L = L if L != -1 else len(self._data)
+        losses = []
+
+        cyclic_data_loader = cycle(data_loader)
+        sliced_data_loader = islice(
+            cyclic_data_loader, self._current_index, self._current_index + L
+        )
+
+        for x, y in tqdm(sliced_data_loader, desc=f"{self._id} | Training"):
+            x, y = x.to(self._device), y.to(self._device)
+            yhat = self._model(x)
+            self._optimizer.zero_grad()
+            loss = self._loss(yhat, y)
+            loss.backward()
+
+            if self._weight_attack is not None:
+                assert (
+                    self._noise_multiplier is not None
+                ), "Attempting to attack, but noise multiplier not set"
+                self._weight_attack(self._model, self._noise_multiplier)
+
+            losses.append(loss.item())
+            self._optimizer.step()
+
+        self._current_index = (self._current_index + L) % self._num_samples
+        losses = torch.Tensor(losses)
+        training_accuracy = self._get_training_accuracy()
+
+        return losses.mean().item(), training_accuracy
+
     @abstractmethod
-    def train_one_epoch(
+    def train_communication_round(
         self,
+        L: int,
     ) -> Tuple[float, float, Optional[float], Optional[float]]:
         """
         Train one epoch on the client
+
+        Args:
+            L: number of local steps to take
         """
 
     @abstractmethod
@@ -91,7 +169,6 @@ class BaseClient(ABC):
         Info logged after epoch completion
         """
 
-    @abstractmethod
     def update_parameters(self, server_state_dict: Dict[str, Any]):
         """Update local model parameters to state of global model.
 
@@ -100,12 +177,11 @@ class BaseClient(ABC):
         """
         self._model.load_state_dict(server_state_dict, strict=True)
 
-    def train_epoch(self):
+    def train_round(self, L: int):
         """
         Run a federated learning training epoch on the client
         """
-        self._model.train()
-        loss, tr_acc, epsilon, delta = self.train_one_epoch()
+        loss, tr_acc, epsilon, delta = self.train_communication_round(L)
 
         self._train_history.append(
             {

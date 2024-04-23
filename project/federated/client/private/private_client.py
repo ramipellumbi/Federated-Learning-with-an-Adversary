@@ -74,44 +74,24 @@ class PrivateClient(BaseClient):
             max_grad_norm=self._max_grad_norm,
         )
 
-        self._model: GradSampleModule = _model
-        self._optimizer: DPOptimizer = _optimizer
-        self._data: DataLoader[MNIST] = _data_loader
+        self.set_model(_model)
+        self.set_optimizer(_optimizer)
+        self.set_data_loader(_data_loader)
 
-    # override train one epoch function
-    def train_one_epoch(self):
-        """Perform one epoch of training on model
-
-        Args:
-            train_loader: training set as a torch.utils.data.DataLoader
-            device: specify which device to train on
-            epoch: epoch being trained
-            client: name of client
-        """
-        losses = []
+    def train_communication_round(self, L: int):
+        assert isinstance(
+            self._optimizer, DPOptimizer
+        ), "Optimizer must be DPOptimizer for DP training"
 
         with BatchMemoryManager(
             data_loader=self._data,
             max_physical_batch_size=64,
             optimizer=self._optimizer,
         ) as memory_safe_loader:
-            for x, y in tqdm(
-                memory_safe_loader,
-                desc=f"{self._id} | Epoch {self._epochs_trained}",
-            ):
-                x, y = x.to(self._device), y.to(self._device)
-                self._optimizer.zero_grad()
-                yhat = self._model(x)
-                loss = self._loss(yhat, y)
-                loss.backward()
-                self._optimizer.step()
-                losses.append(loss.item())
-
-            losses = torch.Tensor(losses)
-            training_accuracy = self._get_training_accuracy()
+            mean_loss, tr_acc = self._train_communication_round(memory_safe_loader, L)
             epsilon = self._privacy_engine.accountant.get_epsilon(delta=self._td)
 
-        return losses.mean().item(), training_accuracy, epsilon, self._td
+        return mean_loss, tr_acc, epsilon, self._td
 
     def log_epoch(
         self,
@@ -128,4 +108,7 @@ class PrivateClient(BaseClient):
     def update_parameters(self, server_state_dict: Dict[str, Any]):
         # prepend the model with the privacy engine weight names by adding the prefix "_module to all the keys"
         server_state_dict = {f"_module.{k}": v for k, v in server_state_dict.items()}
+        # assert that all keys start with "_module."
+        assert all(k.startswith("_module.") for k in server_state_dict.keys())
+
         super().update_parameters(server_state_dict)

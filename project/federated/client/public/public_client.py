@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import torch
 import torch.nn as nn
@@ -34,24 +34,13 @@ class PublicClient(BaseClient):
             id=id, model=model, device=device, data=data, optimizer=_optimizer
         )
 
-    def train_one_epoch(
+    def train_communication_round(
         self,
+        L: int,
     ):
-        losses = []
-        self._model.train()
-        for x, y in tqdm(self._data, desc=f"{self._id} | Epoch {self._epochs_trained}"):
-            x, y = x.to(self._device), y.to(self._device)
-            yhat = self._model(x)
-            self._optimizer.zero_grad()
-            loss = self._loss(yhat, y)
-            loss.backward()
-            losses.append(loss.item())
-            self._optimizer.step()
+        mean_loss, tr_acc = self._train_communication_round(self._data, L)
 
-        losses = torch.Tensor(losses)
-        training_accuracy = self._get_training_accuracy()
-
-        return losses.mean().item(), training_accuracy, None, None
+        return mean_loss, tr_acc, None, None
 
     def log_epoch(
         self,
@@ -64,6 +53,3 @@ class PublicClient(BaseClient):
         print(
             f"{self._id} | Epoch {self._epochs_trained} | Loss: {loss:.4f} | Tr. Acc: {training_accuracy:.4f}"
         )
-
-    def update_parameters(self, server_state_dict: Dict[str, Any]):
-        super().update_parameters(server_state_dict)

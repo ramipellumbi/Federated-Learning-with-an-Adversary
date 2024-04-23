@@ -1,3 +1,4 @@
+from collections import defaultdict
 import copy
 from typing import Any, Dict, List, Union, Literal
 
@@ -48,6 +49,7 @@ class DataLoader:
         val_split: float = 0.1,
         test_split: float = 0.1,
         n_clients: int = 1,
+        use_iid: bool = True,
         # num_adversaries: int = 0,
     ) -> None:
         # assert ratios make sense
@@ -102,16 +104,14 @@ class DataLoader:
             shuffle=True,
         )
 
-        self.train_datasets = self._split_dataset_into_subsets(
-            mnist_train, train_indices, self.n_clients
-        )
-
-        # set up adversarial dataset
-        # if num_adversaries > 0:
-        #     for i in range(num_adversaries):
-        #         print(f"Creating adversarial dataset {i}")
-        #         dset = self.train_datasets[i]
-        #         self.train_datasets[i] = create_mislabeled_dataset(dset)
+        if use_iid:
+            self.train_datasets = self._split_dataset_into_subsets_iid(
+                mnist_train, train_indices, self.n_clients
+            )
+        else:
+            self.train_datasets = self._split_dataset_into_subsets_non_iid(
+                mnist_train, train_indices, self.n_clients
+            )
 
         self.val_dataset: Subset[MNIST] = Subset(mnist_train, val_indices)
         self.test_dataset: Union[MNIST, Subset[MNIST]] = (
@@ -134,7 +134,65 @@ class DataLoader:
             pin_memory=True,
         )
 
-    def _split_dataset_into_subsets(
+    def _split_dataset_into_subsets_non_iid(
+        self, dataset: MNIST, indices: List[int], n_clients: int
+    ) -> List[Subset[MNIST]]:
+        # Initialize a dictionary to keep track of indices for each label.
+        label_to_indices = defaultdict(list)
+        for idx in indices:
+            label = dataset.targets[idx].item()
+            label_to_indices[label].append(idx)
+
+        # Pre-allocate minimum samples per label for each client
+        min_samples_per_label = 30
+        client_indices = [list() for _ in range(n_clients)]
+
+        # Allocate at least 30 samples of each label to every client
+        for label, indices in label_to_indices.items():
+            np.random.shuffle(indices)
+            allocated_indices = 0
+            for client_id in range(n_clients):
+                client_specific_indices = indices[
+                    allocated_indices : allocated_indices + min_samples_per_label
+                ]
+                client_indices[client_id].extend(client_specific_indices)
+                allocated_indices += min_samples_per_label
+                if allocated_indices + min_samples_per_label > len(indices):
+                    break  # Break if we've allocated min samples and cannot fulfill another full round
+
+        # Allocate remaining data in a non-i.i.d fashion
+        for label, indices in label_to_indices.items():
+            remaining_indices = indices[
+                allocated_indices:
+            ]  # Get remaining indices after min allocation
+            np.random.shuffle(remaining_indices)
+
+            # Generate proportions with a strong skew for uneven distribution of the remaining data
+            alpha = np.random.random(n_clients) * 10  # Encourage skewed allocation
+            proportions_remaining = np.random.dirichlet(alpha)
+
+            # Calculate end indices based on proportions for remaining data
+            n_remaining_indices = len(remaining_indices)
+            proportions_end_index = [
+                int(proportion * n_remaining_indices)
+                for proportion in proportions_remaining
+            ]
+
+            start_idx = 0
+            for client_id, end_idx_increment in enumerate(proportions_end_index):
+                end_idx = start_idx + end_idx_increment
+                client_specific_remaining_indices = remaining_indices[start_idx:end_idx]
+                client_indices[client_id].extend(client_specific_remaining_indices)
+                start_idx = end_idx
+
+        # Shuffle the indices within each client to ensure randomness
+        for i in range(n_clients):
+            np.random.shuffle(client_indices[i])
+
+        subsets = [Subset(dataset, indices) for indices in client_indices]
+        return subsets
+
+    def _split_dataset_into_subsets_iid(
         self, dataset: MNIST, indices: List[int], n_clients: int
     ) -> List[Subset[MNIST]]:
         # Splitting the dataset indices among N clients
