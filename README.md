@@ -38,14 +38,14 @@ Once dependencies are installed, you can execute the project with custom configu
 Navigate to the root directory and run `python project/main.py` with desired arguments, e.g., to run the project with 10 clients, including 2 adversarial, for 5 rounds with IID data, use the following command:
 
 ```bash
-python project/main.py --n_clients 10 --n_adv 2 --n_rounds 5 --batch_size 64 --enable_adv_protection True --iid True
+python project/main.py --n_clients 10 --n_adv 2 --noise_multiplier=0.1 --n_rounds 5 --batch_size 64 --enable_adv_protection True --iid True
 ```
 
 ### Command Line Arguments
 
 - `--n_clients`: Number of clients participating in the federated learning (default=10).
 - `--n_adv`: Number of adversarial clients (default=0).
-- `--noise_multiplier`: Noise multiplier for adversarial attacks (use when `n_adv` > 0).
+- `--noise_multiplier`: Noise multiplier for adversarial attacks (required when `n_adv` > 0).
 - `--n_rounds`: Number of federated learning rounds (default=5).
 - `--L`: Local epochs to train on client side before updating the server (default=-1 for all batches).
 - `--batch_size`: Batch size for training (default=64).
@@ -60,13 +60,13 @@ python project/main.py --n_clients 10 --n_adv 2 --n_rounds 5 --batch_size 64 --e
 To run the project with 10 clients, including 2 adversarial, for 5 rounds with IID data, use the following command:
 
 ```bash
-python project/main.py --n_clients 10 --n_adv 2 --n_rounds 5 --iid True
+python project/main.py --n_clients 10 --n_adv 2 --noise_multiplier=0.1 --n_rounds 5 --iid True
 ```
 
 To enable differential privacy with epsilon=1.0 and delta=1e-5, add the `--use_differential_privacy`, `--eps`, and `--delta` flags accordingly:
 
 ```bash
-python project/main.py --n_clients 10 --n_adv 2 --n_rounds 5 --iid True --use_differential_privacy True --eps 1.0 --delta 1e-5
+python project/main.py --n_clients 10 --n_adv 2 --noise_multiplier=0.1 --n_rounds 5 --iid True --use_differential_privacy True --eps 1.0 --delta 1e-5
 ```
 
 ## Results
