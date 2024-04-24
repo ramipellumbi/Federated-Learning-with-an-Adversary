@@ -53,7 +53,7 @@ class PrivateClient(BaseClient):
         # csprng does not work with this version of PyTorch & Python.
         # all setting False does is potentially use non secure parallel RNG.
         # Fine for testing.
-        self._privacy_engine = PrivacyEngine(secure_mode=False)
+        self._privacy_engine = PrivacyEngine(secure_mode=False, accountant="rdp")
 
         if not ModuleValidator.is_valid(self._model):
             module = ModuleValidator.fix(self._model)
@@ -79,6 +79,9 @@ class PrivateClient(BaseClient):
         self.set_data_loader(_data_loader)
 
     def train_communication_round(self, L: int):
+        assert isinstance(
+            self._model, GradSampleModule
+        ), "Model must be GradSampleModule for DP training"
         assert isinstance(
             self._optimizer, DPOptimizer
         ), "Optimizer must be DPOptimizer for DP training"

@@ -55,6 +55,7 @@ if __name__ == "__main__":
         n_clients=n_clients,
         use_iid=use_iid_data,
     )
+    print(enable_adv_protection)
     server = Server(
         model=Model(),
         device=mps_device,
@@ -79,8 +80,8 @@ if __name__ == "__main__":
             noise_multiplier=noise_multiplier,
             target_epsilon=target_epsilon,
             target_delta=target_delta,
-            num_epochs=num_rounds,
-            max_grad_norm=10.0,
+            num_epochs=num_rounds if L == -1 else num_rounds // L,
+            max_grad_norm=100.0,
         )
         for i in range(n_adv)
     ]
@@ -103,8 +104,8 @@ if __name__ == "__main__":
                 data=dataloader.train_loaders[i],
                 target_epsilon=target_epsilon,
                 target_delta=target_delta,
-                num_epochs=num_rounds,
-                max_grad_norm=10.0,
+                num_epochs=num_rounds if L == -1 else num_rounds // L,
+                max_grad_norm=100.0,
             )
         )
         for i in range(n_adv, n_clients)
