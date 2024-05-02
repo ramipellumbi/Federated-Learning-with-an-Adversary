@@ -1,3 +1,4 @@
+from functools import partial
 import os
 import sys
 from typing import List
@@ -7,11 +8,12 @@ import torch
 import torch.utils.data
 from torchvision.datasets import MNIST
 
+from project.attacks.weight_attack import weight_attack
 from project.federated.client import (
-    PublicClient,
     AdversarialClient,
     PrivateClient,
     PrivateAdversarialClient,
+    PublicClient,
 )
 from project.federated.server import Server
 from project.data_loaders.mnist.data_loader import DataLoader
@@ -41,6 +43,7 @@ if __name__ == "__main__":
 
     enable_adv_protection: bool = args.should_enable_adv_protection
     noise_multiplier: float = args.noise_multiplier
+    trust_threshold: float = args.trustworthy_threshold
 
     should_use_private: bool = args.should_use_private_clients
     target_epsilon: float = args.target_epsilon
@@ -55,33 +58,35 @@ if __name__ == "__main__":
         n_clients=n_clients,
         use_iid=use_iid_data,
     )
-    print(enable_adv_protection)
     server = Server(
         model=Model(),
         device=mps_device,
         validation_data=dataloader.val_loader,
         enable_adversary_protection=enable_adv_protection,
+        weight_threshold=trust_threshold,
     )
+
+    attack = partial(weight_attack, noise_multiplier=noise_multiplier)
 
     adv_clients: List[TClient] = [
         AdversarialClient(
             id=f"Adversarial Client {i}",
             model=Model(),
             device=mps_device,
-            data=dataloader.train_loaders[i],
-            noise_multiplier=noise_multiplier,
+            data_loader=dataloader.train_loaders[i],
+            attack=attack,
         )
         if not should_use_private
         else PrivateAdversarialClient(
             id=f"Private Adversarial Client {i}",
             model=Model(),
             device=mps_device,
-            data=dataloader.train_loaders[i],
-            noise_multiplier=noise_multiplier,
+            data_loader=dataloader.train_loaders[i],
             target_epsilon=target_epsilon,
             target_delta=target_delta,
             num_epochs=num_rounds if L == -1 else num_rounds // L,
             max_grad_norm=100.0,
+            attack=attack,
         )
         for i in range(n_adv)
     ]
@@ -92,7 +97,7 @@ if __name__ == "__main__":
                 id=f"Client {i}",
                 model=Model(),
                 device=mps_device,
-                data=dataloader.train_loaders[i],
+                data_loader=dataloader.train_loaders[i],
             )
         )
         if not should_use_private
@@ -101,7 +106,7 @@ if __name__ == "__main__":
                 id=f"Private Client {i}",
                 model=Model(),
                 device=mps_device,
-                data=dataloader.train_loaders[i],
+                data_loader=dataloader.train_loaders[i],
                 target_epsilon=target_epsilon,
                 target_delta=target_delta,
                 num_epochs=num_rounds if L == -1 else num_rounds // L,
@@ -123,7 +128,6 @@ if __name__ == "__main__":
 
     test_model(
         model=server.model,
-        device=mps_device,
         test_loader=dataloader.test_loader,
     )
 

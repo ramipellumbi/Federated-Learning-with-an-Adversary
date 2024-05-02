@@ -19,6 +19,7 @@ class Server:
         *,
         model: nn.Module,
         device: torch.device,
+        weight_threshold: float,
         validation_data: torch.utils.data.DataLoader[MNIST],
         enable_adversary_protection: bool = False,
     ):
@@ -29,6 +30,9 @@ class Server:
 
         self._validation_data = validation_data
         self._enable_adversary_protection = enable_adversary_protection
+        # only weights with a trust score above this threshold will be used in aggregation
+        # if None, all weights will be used
+        self._weight_threshold = weight_threshold
 
         # client_parameters[i] is the parameters of model trained by client i
         self._client_weights: List[Dict[str, Any]] = []
@@ -50,6 +54,7 @@ class Server:
 
         # For each parameter, stack across clients and calculate median
         for key in param_keys:
+            # move to CPU because MPS does not support >4 dimensional tensors
             stacked_params = torch.stack(
                 [client[key].to("cpu") for client in self._client_weights]
             )
@@ -177,10 +182,6 @@ class Server:
             self._compute_trust_scores()
 
         total_samples = sum(self._client_samples)
-        aggregated_weights = {
-            name: torch.zeros_like(param, device=self._device)
-            for name, param in self._model.named_parameters()
-        }
 
         # this is the ratio of data client i has compared to all clients -- sums to 1
         client_ratios = [
@@ -188,10 +189,16 @@ class Server:
             for i in range(len(self._client_samples))
         ]
 
+        # only use clients with trust scores above the threshold
+        weight_indices_to_use = [
+            i
+            for i in range(len(self._client_weights))
+            if self._client_trust[i] > self._weight_threshold
+        ]
+
         # this is the ratio of data client i has compared to all clients weighted by trust -- does NOT sum to 1 necessarily
         new_contribution = [
-            self._client_trust[i] * client_ratios[i]
-            for i in range(len(self._client_trust))
+            self._client_trust[i] * client_ratios[i] for i in weight_indices_to_use
         ]
 
         # normalize contributions to sum to 1
@@ -200,11 +207,17 @@ class Server:
             contribution / total_new_contribution for contribution in new_contribution
         ]
         self._client_score = client_contributions.copy()
-        print(f"Client contributions: {client_contributions}")
 
+        client_weights_to_use = [self._client_weights[i] for i in weight_indices_to_use]
+
+        # aggregate the weights into the server model
+        aggregated_weights = {
+            name: torch.zeros_like(param, device=self._device)
+            for name, param in self._model.named_parameters()
+        }
         with torch.no_grad():
             for client_weight, weight_fraction in zip(
-                self._client_weights, client_contributions
+                client_weights_to_use, client_contributions
             ):
                 for name, param in client_weight.items():
                     # dp waits are prepended with _module. -- strip this for global model

@@ -27,7 +27,7 @@ class PrivateClient(BaseClient):
         id: str,
         model: nn.Module,
         device: torch.device,
-        data: torch.utils.data.DataLoader[MNIST],
+        data_loader: torch.utils.data.DataLoader[MNIST],
         max_grad_norm: float,
         num_epochs: int,
         target_epsilon: float,
@@ -43,7 +43,7 @@ class PrivateClient(BaseClient):
             id=id,
             model=model,
             device=device,
-            data=data,
+            data_loader=data_loader,
             optimizer=_private_optimizer,
         )
 

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from itertools import cycle, islice
-from typing import Any, Dict, Iterator, List, Tuple, Optional, Union
+from typing import Any, Callable, Dict, Iterator, List, Tuple, Optional, Union
 
 from opacus.optimizers import DPOptimizer
 import pandas as pd
@@ -19,7 +19,7 @@ class BaseClient(ABC):
         model: nn.Module,
         optimizer: torch.optim.Optimizer,
         device: torch.device,
-        data: torch.utils.data.DataLoader[MNIST],
+        data_loader: torch.utils.data.DataLoader[MNIST],
     ):
         self._id = id
         self._device = device
@@ -28,19 +28,18 @@ class BaseClient(ABC):
 
         self._loss = nn.CrossEntropyLoss()
         self._optimizer = optimizer
-        self._data = data
+        self._data = data_loader
 
         # each client should track how many epochs they have trained
         self._epochs_trained = 0
-        self._num_samples = len(data)
+        self._num_samples = len(data_loader)
 
         self._train_history: List[Dict[str, Union[str, Optional[float]]]] = []
 
         self._current_index = 0
         self._dataset_completed = False
 
-        self._weight_attack = None
-        self._noise_multiplier = None
+        self._attack: Optional[Callable[[nn.Module], nn.Module]] = None
 
     @property
     def train_history(self) -> pd.DataFrame:
@@ -56,6 +55,10 @@ class BaseClient(ABC):
         """
         Return the model the client currently has
         """
+        # if there is an attack, return the model with attacked weights
+        if self._attack is not None:
+            return self._attack(self._model)
+
         return self._model
 
     @property
@@ -65,11 +68,8 @@ class BaseClient(ABC):
         """
         return self._num_samples
 
-    def set_weight_attack(self, weight_attack):
-        self._weight_attack = weight_attack
-
-    def set_noise_multiplier(self, noise_multiplier: float):
-        self._noise_multiplier = noise_multiplier
+    def set_attack(self, attack: Callable[[nn.Module], nn.Module]):
+        self._attack = attack
 
     def set_model(self, model: nn.Module):
         """
@@ -128,12 +128,6 @@ class BaseClient(ABC):
             self._optimizer.zero_grad()
             loss = self._loss(yhat, y)
             loss.backward()
-
-            if self._weight_attack is not None:
-                assert (
-                    self._noise_multiplier is not None
-                ), "Attempting to attack, but noise multiplier not set"
-                self._weight_attack(self._model, self._noise_multiplier)
 
             losses.append(loss.item())
             self._optimizer.step()

@@ -51,7 +51,6 @@ def train_model(*, server: Server, num_rounds: int, L: int, clients: List[TClien
 def test_model(
     *,
     model: torch.nn.Module,
-    device: torch.device,
     test_loader: torch.utils.data.DataLoader[MNIST],
 ):
     with torch.no_grad():
@@ -59,7 +58,6 @@ def test_model(
         correct = 0
         total = 0
         for images, labels in test_loader:
-            images, labels = images.to(device), labels.to(device)
             outputs = model(images)
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)

@@ -19,11 +19,10 @@ class PublicClient(BaseClient):
 
     def __init__(
         self,
-        *,
         id: str,
         model: nn.Module,
         device: torch.device,
-        data: torch.utils.data.DataLoader[MNIST],
+        data_loader: torch.utils.data.DataLoader[MNIST],
     ):
         _optimizer = torch.optim.Adam(
             params=model.parameters(),
@@ -31,7 +30,11 @@ class PublicClient(BaseClient):
             betas=(0.9, 0.999),
         )
         super().__init__(
-            id=id, model=model, device=device, data=data, optimizer=_optimizer
+            id=id,
+            model=model,
+            device=device,
+            data_loader=data_loader,
+            optimizer=_optimizer,
         )
 
     def train_communication_round(

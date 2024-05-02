@@ -10,11 +10,21 @@ class FederatedLearningConfig:
     n_rounds: int
     L: int
     batch_size: int
+    trustworthy_threshold: float
     should_use_iid_training_data: bool
     should_enable_adv_protection: bool
     should_use_private_clients: bool
     target_epsilon: float
     target_delta: float
+
+
+def boolean_string(s: str) -> bool:
+    """
+    Converts a string representing a boolean to a boolean value.
+    """
+    if s not in {"False", "True"}:
+        raise ValueError("Not a valid boolean string")
+    return s == "True"
 
 
 def validate_command_line_arguments(args):
@@ -39,12 +49,19 @@ def validate_command_line_arguments(args):
         ValueError: If differential privacy is enabled but epsilon or delta are not provided or invalid.
     """
     # assert at least one client and that the client number is an integer
-    assert args.n_clients > 0, "Number of clients must be greater than 0"
     assert isinstance(args.n_clients, int), "Number of clients must be an integer"
+    assert args.n_clients > 0, "Number of clients must be greater than 0"
+
+    assert isinstance(
+        args.trust_threshold, float
+    ), "Trustworthy threshold must be a float"
+    assert (
+        0 <= args.trust_threshold <= 1
+    ), "Trustworthy threshold must be between 0 and 1"
 
     # assert that the number of adversaries is a non-negative integer and less than the number of clients
-    assert args.n_adv >= 0, "Number of adversaries must be non-negative"
     assert isinstance(args.n_adv, int), "Number of adversaries must be an integer"
+    assert args.n_adv >= 0, "Number of adversaries must be non-negative"
     assert (
         args.n_adv < args.n_clients
     ), "Number of adversaries must be less than number of clients"
@@ -57,7 +74,7 @@ def validate_command_line_arguments(args):
         assert isinstance(
             args.noise_multiplier, float
         ), "Noise multiplier must be a float"
-        assert args.noise_multiplier > 0, "Noise multiplier must be greater than 0"
+        assert args.noise_multiplier >= 0, "Noise multiplier must be positive"
 
     # assert that the number of epochs is a positive integer
     assert args.n_rounds > 0, "Number of rounds must be greater than 0"
@@ -117,13 +134,17 @@ def get_command_line_args():
     # number of local batches. -1 means each client trains on all their batches in a communication round
     parser.add_argument("--L", type=int, default=-1)
     # enable adversarial protection on the server
-    parser.add_argument("--enable_adv_protection", type=bool, default=False)
+    parser.add_argument("--enable_adv_protection", type=boolean_string, default=False)
+    # only use clients with a trust score above a certain threshold
+    parser.add_argument("--trust_threshold", type=float, default=0.0)
     # enable iid data distribution
-    parser.add_argument("--iid", type=bool, default=True)
+    parser.add_argument("--iid", type=boolean_string, default=True)
     # batch size a client trains on
     parser.add_argument("--batch_size", type=int, default=64)
     # enable differential privacy
-    parser.add_argument("--use_differential_privacy", type=bool, default=False)
+    parser.add_argument(
+        "--use_differential_privacy", type=boolean_string, default=False
+    )
     # epsilon for differential privacy. -1 means epsilon is not provided
     parser.add_argument("--eps", type=float, default=-1)
     # delta for differential privacy. -1 means delta is not provided
@@ -145,4 +166,5 @@ def get_command_line_args():
         should_use_private_clients=args.use_differential_privacy,
         target_epsilon=args.eps,
         target_delta=args.delta,
+        trustworthy_threshold=args.trust_threshold,
     )
