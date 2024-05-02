@@ -50,6 +50,7 @@ python project/main.py --n_clients 10 --n_adv 2 --noise_multiplier=0.1 --n_round
 - `--L`: Local epochs to train on client side before updating the server (default=-1 for all batches).
 - `--batch_size`: Batch size for training (default=64).
 - `--enable_adv_protection`: Enable adversarial protection on the server (default=False).
+- `--trust_threshold`: Threshold for a client's trustworthiness score in order for their weights to be a part of the aggregation. (default=0.0, i.e., use all weights).
 - `--iid`: Use IID distribution of data across clients (default=True).
 - `--use_differential_privacy`: Enable differential privacy (default=False).
 - `--eps`: Target epsilon for differential privacy (required if `use_differential_privacy` is True).
@@ -60,13 +61,13 @@ python project/main.py --n_clients 10 --n_adv 2 --noise_multiplier=0.1 --n_round
 To run the project with 10 clients, including 2 adversarial, for 5 rounds with IID data, use the following command:
 
 ```bash
-python project/main.py --n_clients 10 --n_adv 2 --noise_multiplier=0.1 --n_rounds 5 --iid True
+python project/main.py --n_clients 10 --n_adv 2 --noise_multiplier 0.1 --n_rounds 5 --iid True
 ```
 
 To enable differential privacy with epsilon=1.0 and delta=1e-5, add the `--use_differential_privacy`, `--eps`, and `--delta` flags accordingly:
 
 ```bash
-python project/main.py --n_clients 10 --n_adv 2 --noise_multiplier=0.1 --n_rounds 5 --iid True --use_differential_privacy True --eps 1.0 --delta 1e-5
+python project/main.py --n_clients 10 --n_adv 2 --noise_multiplier 0.1 --n_rounds 5 --iid True --use_differential_privacy True --eps 1.0 --delta 1e-5
 ```
 
 ## Results
