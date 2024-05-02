@@ -41,7 +41,7 @@ def train_model(*, server: Server, num_rounds: int, L: int, clients: List[TClien
             current_client.train_round(L)
             server.add_client_parameters(
                 current_client.model.state_dict(),
-                current_client.num_samples,
+                current_client.num_batches if L == -1 else L,
             )
         server.aggregate_parameters()
         if round % 2 == 0 or round == num_rounds - 1:

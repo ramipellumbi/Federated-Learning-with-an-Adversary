@@ -62,9 +62,9 @@ class BaseClient(ABC):
         return self._model
 
     @property
-    def num_samples(self):
+    def num_batches(self):
         """
-        Return the total number of samples the client has
+        Return the total number of batches the client has
         """
         return self._num_samples
 
