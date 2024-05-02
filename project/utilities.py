@@ -39,10 +39,11 @@ def save_results(
     should_use_private_clients = config.should_use_private_clients
     target_epsilon = config.target_epsilon
     target_delta = config.target_delta
+    trust_threshold = config.trustworthy_threshold
 
     # Save name that has n_clients, n_adv, noise_multiplier, n_rounds, L, batch_size, should_use_iid_training_data, should_enable_adv_protection, target_epsilon, target_delta
-    client_save_name = f"project/results/FL_Config_NClients{n_clients}_NAdv{n_adv}_NoiseMultiplier{noise_multiplier}_NRounds{n_rounds}_L{L}_BatchSize{batch_size}_IID{should_use_iid_training_data}_AdvProt{should_enable_adv_protection}_PrivClients{should_use_private_clients}_Eps{target_epsilon}_Delta{target_delta}"
-    server_save_name = f"project/results/FL_Config_NClients{n_clients}_NAdv{n_adv}_NoiseMultiplier{noise_multiplier}_NRounds{n_rounds}_L{L}_BatchSize{batch_size}_IID{should_use_iid_training_data}_AdvProt{should_enable_adv_protection}_PrivClients{should_use_private_clients}_Eps{target_epsilon}_Delta{target_delta}_server"
+    client_save_name = f"project/results/FL_Config_NClients{n_clients}_NAdv{n_adv}_NoiseMultiplier{noise_multiplier}_NRounds{n_rounds}_L{L}_BatchSize{batch_size}_IID{should_use_iid_training_data}_AdvProt{should_enable_adv_protection}_PrivClients{should_use_private_clients}_Eps{target_epsilon}_Delta{target_delta}_TrustThreshold{trust_threshold}"
+    server_save_name = f"project/results/FL_Config_NClients{n_clients}_NAdv{n_adv}_NoiseMultiplier{noise_multiplier}_NRounds{n_rounds}_L{L}_BatchSize{batch_size}_IID{should_use_iid_training_data}_AdvProt{should_enable_adv_protection}_PrivClients{should_use_private_clients}_Eps{target_epsilon}_Delta{target_delta}_TrustThreshold{trust_threshold}_server"
 
     df.to_csv(client_save_name, index=False)
     server.val_performance.to_csv(server_save_name, index=False)
@@ -52,7 +53,7 @@ def parse_filename_to_config(filename: str) -> FederatedLearningConfig:
     # Define a regular expression pattern to match the components in the filename
     pattern = (
         r"FL_Config_NClients(\d+)_NAdv(\d+)_NoiseMultiplier([\d.]+)_NRounds(\d+)_L(-?\d+)_"
-        r"BatchSize(\d+)_IID(.*?)_AdvProt(.*?)_PrivClients(.*?)_Eps([\d.]+)_Delta([\d.]+)"
+        r"BatchSize(\d+)_IID(.*?)_AdvProt(.*?)_PrivClients(.*?)_Eps([\d.]+)_Delta([\d.]+)_TrustThreshold([\d.]+)"
     )
     match = re.search(pattern, filename)
 
@@ -71,6 +72,7 @@ def parse_filename_to_config(filename: str) -> FederatedLearningConfig:
     should_use_private_clients = match.group(9) == "True"
     target_epsilon = float(match.group(10))
     target_delta = float(match.group(11))
+    trust_threshold = float(match.group(12))
 
     # Construct and return a FederatedLearningConfig instance from extracted values
     return FederatedLearningConfig(
@@ -85,4 +87,5 @@ def parse_filename_to_config(filename: str) -> FederatedLearningConfig:
         should_use_private_clients=should_use_private_clients,
         target_epsilon=target_epsilon,
         target_delta=target_delta,
+        trustworthy_threshold=trust_threshold,
     )
