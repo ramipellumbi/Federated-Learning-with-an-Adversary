@@ -96,18 +96,6 @@ class PrivateClient(BaseClient):
 
         return mean_loss, tr_acc, epsilon, self._td
 
-    def log_epoch(
-        self,
-        *,
-        loss: float,
-        training_accuracy: float,
-        epsilon: Optional[float] = None,
-        delta: Optional[float] = None,
-    ):
-        print(
-            f"{self._id} | Epoch {self._epochs_trained} | Loss: {loss:.4f} | Tr. Acc: {training_accuracy:.4f} | ε = {epsilon:.4f} | δ = {self._td}"
-        )
-
     def update_parameters(self, server_state_dict: Dict[str, Any]):
         # prepend the model with the privacy engine weight names by adding the prefix "_module to all the keys"
         server_state_dict = {f"_module.{k}": v for k, v in server_state_dict.items()}

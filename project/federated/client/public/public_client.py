@@ -44,15 +44,3 @@ class PublicClient(BaseClient):
         mean_loss, tr_acc = self._train_communication_round(self._data, L)
 
         return mean_loss, tr_acc, None, None
-
-    def log_epoch(
-        self,
-        *,
-        loss: float,
-        training_accuracy,
-        epsilon: Optional[float] = None,
-        delta: Optional[float] = None,
-    ) -> None:
-        print(
-            f"{self._id} | Epoch {self._epochs_trained} | Loss: {loss:.4f} | Tr. Acc: {training_accuracy:.4f}"
-        )

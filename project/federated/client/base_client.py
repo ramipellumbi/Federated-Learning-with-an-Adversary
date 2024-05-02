@@ -150,7 +150,6 @@ class BaseClient(ABC):
             L: number of local steps to take
         """
 
-    @abstractmethod
     def log_epoch(
         self,
         *,
@@ -162,6 +161,14 @@ class BaseClient(ABC):
         """
         Info logged after epoch completion
         """
+        print_str = f"{self._id} | Epoch {self._epochs_trained} | Loss: {loss:.4f} | Tr. Acc: {training_accuracy:.4f}"
+        if epsilon is not None:
+            print_str += f" | ε: {epsilon:.4f}"
+
+        if delta is not None:
+            print_str += f" | δ: {delta:.4f}"
+
+        print(print_str)
 
     def update_parameters(self, server_state_dict: Dict[str, Any]):
         """Update local model parameters to state of global model.
