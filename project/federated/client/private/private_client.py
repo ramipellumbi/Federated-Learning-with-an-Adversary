@@ -76,7 +76,7 @@ class PrivateClient(BaseClient):
         self.set_optimizer(_optimizer)
         self.set_data_loader(_data_loader)
 
-    def train_communication_round(self, L: int):
+    def train_communication_round(self, L: int, is_verbose: bool):
         assert isinstance(
             self._model, GradSampleModule
         ), "Model must be GradSampleModule for DP training"
@@ -89,7 +89,9 @@ class PrivateClient(BaseClient):
             max_physical_batch_size=64,
             optimizer=self._optimizer,
         ) as memory_safe_loader:
-            mean_loss, tr_acc = self._train_communication_round(memory_safe_loader, L)
+            mean_loss, tr_acc = self._train_communication_round(
+                memory_safe_loader, L, is_verbose
+            )
             epsilon = self._privacy_engine.accountant.get_epsilon(delta=self._td)
 
         return mean_loss, tr_acc, epsilon, self._td

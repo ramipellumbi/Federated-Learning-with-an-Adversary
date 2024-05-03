@@ -125,16 +125,13 @@ class Server:
         correct = 0
         total = 0
         with torch.no_grad():
-            for images, labels in tqdm(self._validation_data,
-                                       desc="Validating model"):
+            for images, labels in tqdm(self._validation_data, desc="Validating model"):
                 outputs = self._model(images)
                 _, predicted = torch.max(outputs.data, 1)
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
             accuracy = 100 * correct / total
-        print(
-            f"Accuracy of the server on the validation images: {accuracy:.2f}%"
-        )
+        print(f"Accuracy of the server on the validation images: {accuracy:.2f}%")
 
         # add a row for each client to the performance log
         for i in range(len(self._client_score)):
@@ -166,9 +163,7 @@ class Server:
             for i in range(len(self._client_weights)):
                 self._client_trust[i] = 1.0 / len(self._client_weights)
 
-    def aggregate_parameters(
-        self,
-    ):
+    def aggregate_parameters(self, is_verbose: bool):
         """
         Aggregate the parameters of all clients and update the model with the
         aggregated weights.
@@ -198,26 +193,30 @@ class Server:
             for i in range(len(self._client_weights))
             if self._client_trust[i] > self._weight_threshold
         ]
+        if is_verbose:
+            print(
+                f"Using {len(weight_indices_to_use)} clients out of {len(self._client_weights)}"
+            )
+            print(f"Clients to use: {weight_indices_to_use}")
 
         # this is the ratio of data client i has compared to all clients
         # weighted by trust -- NOTE: does NOT sum to 1 necessarily
         new_contribution = [
-            self._client_trust[i] * client_ratios[i]
-            for i in weight_indices_to_use
+            self._client_trust[i] * client_ratios[i] for i in weight_indices_to_use
         ]
 
         # normalize contributions to sum to 1
         total_new_contribution = sum(new_contribution)
         client_contributions = [
-            contribution / total_new_contribution
-            for contribution in new_contribution
+            contribution / total_new_contribution for contribution in new_contribution
         ]
+        if is_verbose:
+            print(f"Client contributions: {client_contributions}")
 
         # store the client scores for next round weighting
         self._client_score = client_contributions.copy()
 
-        client_weights_to_use = [self._client_weights[i]
-                                 for i in weight_indices_to_use]
+        client_weights_to_use = [self._client_weights[i] for i in weight_indices_to_use]
 
         # aggregate the weights into the server model
         aggregated_weights = {

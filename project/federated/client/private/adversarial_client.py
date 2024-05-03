@@ -33,9 +33,9 @@ class AdversarialClient(PrivateClient):
         )
         self.set_attack(attack)
 
-    def train_communication_round(self, L: int):
+    def train_communication_round(self, L: int, is_verbose: bool):
         assert (
             self._attack is not None
         ), "Weight attack is not set for adversarial client"
 
-        return super().train_communication_round(L)
+        return super().train_communication_round(L, is_verbose)

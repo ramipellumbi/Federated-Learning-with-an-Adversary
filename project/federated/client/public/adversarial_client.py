@@ -17,15 +17,12 @@ class AdversarialClient(PublicClient):
         data_loader: torch.utils.data.DataLoader,
         attack: Callable[[nn.Module], nn.Module],
     ):
-        super().__init__(id=id,
-                         model=model,
-                         device=device,
-                         data_loader=data_loader)
+        super().__init__(id=id, model=model, device=device, data_loader=data_loader)
         self.set_attack(attack)
 
-    def train_communication_round(self, L: int):
+    def train_communication_round(self, L: int, is_verbose: bool):
         assert (
             self._attack is not None
         ), "Weight attack is not set for adversarial client"
 
-        return super().train_communication_round(L)
+        return super().train_communication_round(L, is_verbose)

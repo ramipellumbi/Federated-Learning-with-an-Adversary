@@ -91,21 +91,23 @@ class BaseClient(ABC):
         self._data = data
         self._num_samples = len(data)
 
-    def _get_training_accuracy(self):
+    def _get_training_accuracy(self, is_verbose: bool):
         """
         Accuracy of the current model on the training data
         """
         self._model.eval()
         correct = 0
         with torch.no_grad():
-            for x, y in tqdm(self._data, desc=f"{self._id} | Train Accuracy"):
+            for x, y in tqdm(
+                self._data, desc=f"{self._id} | Train Accuracy", disable=not is_verbose
+            ):
                 x, y = x.to(self._device), y.to(self._device)
                 yhat = self._model(x)
                 correct += (yhat.argmax(1) == y).sum().item()
         return correct / self._num_samples
 
     def _train_communication_round(
-        self, data_loader: torch.utils.data.DataLoader[MNIST], L: int
+        self, data_loader: torch.utils.data.DataLoader[MNIST], L: int, is_verbose: bool
     ):
         if (
             self._dataset_completed
@@ -122,7 +124,9 @@ class BaseClient(ABC):
             cyclic_data_loader, self._current_index, self._current_index + L
         )
 
-        for x, y in tqdm(sliced_data_loader, desc=f"{self._id} | Training"):
+        for x, y in tqdm(
+            sliced_data_loader, desc=f"{self._id} | Training", disable=not is_verbose
+        ):
             x, y = x.to(self._device), y.to(self._device)
             yhat = self._model(x)
             self._optimizer.zero_grad()
@@ -134,7 +138,7 @@ class BaseClient(ABC):
 
         self._current_index = (self._current_index + L) % self._num_samples
         losses = torch.Tensor(losses)
-        training_accuracy = self._get_training_accuracy()
+        training_accuracy = self._get_training_accuracy(is_verbose)
 
         return losses.mean().item(), training_accuracy
 
@@ -142,6 +146,7 @@ class BaseClient(ABC):
     def train_communication_round(
         self,
         L: int,
+        is_verbose: bool,
     ) -> Tuple[float, float, Optional[float], Optional[float]]:
         """
         Train one epoch on the client
@@ -178,11 +183,11 @@ class BaseClient(ABC):
         """
         self._model.load_state_dict(server_state_dict, strict=True)
 
-    def train_round(self, L: int):
+    def train_round(self, L: int, is_verbose: bool):
         """
         Run a federated learning training epoch on the client
         """
-        loss, tr_acc, epsilon, delta = self.train_communication_round(L)
+        loss, tr_acc, epsilon, delta = self.train_communication_round(L, is_verbose)
 
         self._train_history.append(
             {
@@ -194,7 +199,8 @@ class BaseClient(ABC):
                 "delta": delta,
             }
         )
-        self.log_epoch(
-            loss=loss, training_accuracy=tr_acc, epsilon=epsilon, delta=delta
-        )
+        if is_verbose:
+            self.log_epoch(
+                loss=loss, training_accuracy=tr_acc, epsilon=epsilon, delta=delta
+            )
         self._epochs_trained += 1

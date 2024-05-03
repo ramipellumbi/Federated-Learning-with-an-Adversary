@@ -4,7 +4,6 @@ import sys
 from typing import List
 
 import torch
-import torch.utils.data
 
 from attacks.weight_attack import weight_attack
 from federated.client import (
@@ -113,10 +112,7 @@ if __name__ == "__main__":
     assert len(clients) == n_clients
 
     train_model(
-        server=server,
-        num_rounds=num_rounds,
-        clients=clients,
-        L=L,
+        server=server, num_rounds=num_rounds, clients=clients, L=L, is_verbose=True
     )
 
     test_model(

@@ -17,7 +17,9 @@ TClient = Union[
 ]
 
 
-def train_model(*, server: Server, num_rounds: int, L: int, clients: List[TClient]):
+def train_model(
+    *, server: Server, num_rounds: int, L: int, clients: List[TClient], is_verbose
+):
     """
     Trains a federated learning model over a specified number of rounds, with a given set of clients.
 
@@ -38,13 +40,14 @@ def train_model(*, server: Server, num_rounds: int, L: int, clients: List[TClien
         for i in range(num_clients):
             current_client = clients[i]
             current_client.update_parameters(server.model.state_dict())
-            current_client.train_round(L)
+            current_client.train_round(L, is_verbose)
             server.add_client_parameters(
                 current_client.model.state_dict(),
                 current_client.num_batches if L == -1 else L,
             )
-        server.aggregate_parameters()
+        server.aggregate_parameters(is_verbose)
         if round % 2 == 0 or round == num_rounds - 1:
+            print(f"Round {round + 1} of {num_rounds}")
             server.evaluate_model()
 
 

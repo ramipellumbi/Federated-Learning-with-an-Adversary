@@ -37,11 +37,11 @@ def save_results(
     trust_threshold = config.trustworthy_threshold
 
     # Save name that has n_clients, n_adv, noise_multiplier, n_rounds, L, batch_size, should_use_iid_training_data, should_enable_adv_protection, target_epsilon, target_delta
-    client_save_name = f"project/results/FL_Config_NClients{n_clients}_NAdv{n_adv}_NoiseMultiplier{noise_multiplier}_NRounds{n_rounds}_L{L}_BatchSize{batch_size}_IID{should_use_iid_training_data}_AdvProt{should_enable_adv_protection}_PrivClients{should_use_private_clients}_Eps{target_epsilon}_Delta{target_delta}_TrustThreshold{trust_threshold}"
-    server_save_name = f"project/results/FL_Config_NClients{n_clients}_NAdv{n_adv}_NoiseMultiplier{noise_multiplier}_NRounds{n_rounds}_L{L}_BatchSize{batch_size}_IID{should_use_iid_training_data}_AdvProt{should_enable_adv_protection}_PrivClients{should_use_private_clients}_Eps{target_epsilon}_Delta{target_delta}_TrustThreshold{trust_threshold}_server"
+    client_save_name = f"results/FL_Config_NClients{n_clients}_NAdv{n_adv}_NoiseMultiplier{noise_multiplier}_NRounds{n_rounds}_L{L}_BatchSize{batch_size}_IID{should_use_iid_training_data}_AdvProt{should_enable_adv_protection}_PrivClients{should_use_private_clients}_Eps{target_epsilon}_Delta{target_delta}_TrustThreshold{trust_threshold}"
+    server_save_name = f"results/FL_Config_NClients{n_clients}_NAdv{n_adv}_NoiseMultiplier{noise_multiplier}_NRounds{n_rounds}_L{L}_BatchSize{batch_size}_IID{should_use_iid_training_data}_AdvProt{should_enable_adv_protection}_PrivClients{should_use_private_clients}_Eps{target_epsilon}_Delta{target_delta}_TrustThreshold{trust_threshold}_server"
 
     # create project/results folder if it does not exist
-    os.makedirs("project/results", exist_ok=True)
+    os.makedirs("results", exist_ok=True)
 
     df.to_csv(client_save_name, index=False)
     server.val_performance.to_csv(server_save_name, index=False)

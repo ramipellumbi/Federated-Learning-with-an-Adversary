@@ -36,7 +36,8 @@ class PublicClient(BaseClient):
     def train_communication_round(
         self,
         L: int,
+        is_verbose: bool,
     ):
-        mean_loss, tr_acc = self._train_communication_round(self._data, L)
+        mean_loss, tr_acc = self._train_communication_round(self._data, L, is_verbose)
 
         return mean_loss, tr_acc, None, None
