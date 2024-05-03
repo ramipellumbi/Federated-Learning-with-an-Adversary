@@ -11,12 +11,13 @@ from federated.client import (
     PrivateClient,
     PrivateAdversarialClient,
     PublicClient,
+    TClient,
 )
 from federated.server import Server
 from data_loaders.mnist.data_loader import DataLoader
 from models.mnist.mnist_cnn import MnistCNN as Model
 from setup import get_command_line_args
-from training import train_model, test_model, TClient
+from training import train_model, test_model
 from utilities import save_results
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

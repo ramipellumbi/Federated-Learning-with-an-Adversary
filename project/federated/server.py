@@ -116,7 +116,7 @@ class Server:
         """
         return self._model
 
-    def evaluate_model(self):
+    def evaluate_model(self) -> float:
         """
         Evaluate the model on the validation set and log the checkpointing.
         """
@@ -143,6 +143,8 @@ class Server:
                     "client_score": self._client_score[i],
                 }
             )
+
+        return accuracy
 
     def add_client_parameters(
         self,

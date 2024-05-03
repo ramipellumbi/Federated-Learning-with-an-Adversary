@@ -4,21 +4,19 @@ import torch
 import torch.utils.data
 from torchvision.datasets import MNIST
 
-from federated.client import (
-    PublicClient,
-    AdversarialClient,
-    PrivateClient,
-    PrivateAdversarialClient,
-)
+from federated.client import TClient
 from federated.server import Server
-
-TClient = Union[
-    PublicClient, AdversarialClient, PrivateClient, PrivateAdversarialClient
-]
 
 
 def train_model(
-    *, server: Server, num_rounds: int, L: int, clients: List[TClient], is_verbose
+    *,
+    server: Server,
+    num_rounds: int,
+    L: int,
+    clients: List[TClient],
+    is_verbose: bool,
+    patience: int = 5,
+    min_delta: float = 0.001,
 ):
     """
     Trains a federated learning model over a specified number of rounds, with a given set of clients.
@@ -31,8 +29,13 @@ def train_model(
         num_clients (int): The number of clients participating in the training process.
         L (int): The number of batches each client should train on its local data per round.
         clients (List[TClient]): A list of clients participating in the training. Each client can be of type PublicClient, AdversarialClient, PrivateClient, or PrivateAdversarialClient.
+        is_verbose (bool): A flag indicating whether to print verbose output during training.
+        patience (int): The number of rounds to wait for validation loss to improve before early stopping.
+        min_delta (float): The minimum change in validation loss to qualify as an improvement.
     """
     num_clients = len(clients)
+    best_score = float("inf")
+    rounds_without_improvement = 0
 
     # Run 50 epochs on each client
     for round in range(num_rounds):
@@ -45,10 +48,24 @@ def train_model(
                 current_client.model.state_dict(),
                 current_client.num_batches if L == -1 else L,
             )
+
         server.aggregate_parameters(is_verbose)
         if round % 2 == 0 or round == num_rounds - 1:
             print(f"Round {round + 1} of {num_rounds}")
-            server.evaluate_model()
+            val_acc = server.evaluate_model()
+
+            if val_acc < best_score - min_delta:
+                best_score = val_acc
+                rounds_without_improvement = 0
+            else:
+                rounds_without_improvement += 1
+
+            if rounds_without_improvement >= patience:
+                print(f"Early stopping at round {round + 1}")
+                break
+
+            if is_verbose:
+                print(f"Best Score: {best_score}, Current Score: {val_acc}")
 
 
 def test_model(
