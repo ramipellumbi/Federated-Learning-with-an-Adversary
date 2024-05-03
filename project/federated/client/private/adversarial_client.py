@@ -1,11 +1,8 @@
-from typing import Callable, Optional
+from typing import Callable
 
-from opacus.utils.batch_memory_manager import BatchMemoryManager
 import torch
 import torch.nn as nn
-from torch.nn.modules import Module
 import torch.utils.data
-from tqdm import tqdm
 
 from .private_client import PrivateClient
 

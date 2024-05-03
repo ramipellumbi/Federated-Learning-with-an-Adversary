@@ -1,7 +1,6 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from opacus import GradSampleModule, PrivacyEngine
-from opacus.data_loader import DataLoader
 from opacus.optimizers import DPOptimizer
 from opacus.utils.batch_memory_manager import BatchMemoryManager
 from opacus.validators import ModuleValidator
@@ -9,7 +8,6 @@ import torch
 import torch.nn as nn
 import torch.utils.data
 from torchvision.datasets.mnist import MNIST
-from tqdm import tqdm
 
 from project.federated.client.base_client import BaseClient
 
@@ -53,7 +51,8 @@ class PrivateClient(BaseClient):
         # csprng does not work with this version of PyTorch & Python.
         # all setting False does is potentially use non secure parallel RNG.
         # Fine for testing.
-        self._privacy_engine = PrivacyEngine(secure_mode=False, accountant="rdp")
+        self._privacy_engine = PrivacyEngine(secure_mode=False,
+                                             accountant="rdp")
 
         if not ModuleValidator.is_valid(self._model):
             module = ModuleValidator.fix(self._model)

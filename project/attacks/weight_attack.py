@@ -16,7 +16,7 @@ def clone_module(module: torch.nn.Module, device: torch.device) -> torch.nn.Modu
     """
     module_copy = copy.deepcopy(module)
 
-    # Iterate over all parameters and buffers in the copy and move them to specified device
+    # Iterate over parameters and buffers in the copy and move them to device
     for param in module_copy.parameters():
         param.data = param.data.detach().to(device=device)
         if param.grad is not None:

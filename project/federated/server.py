@@ -30,17 +30,17 @@ class Server:
 
         self._validation_data = validation_data
         self._enable_adversary_protection = enable_adversary_protection
-        # only weights with a trust score above this threshold will be used in aggregation
-        # if None, all weights will be used
+        # only weights with a trust score above this threshold will be used in
+        # aggregation. If None, all weights will be used
         self._weight_threshold = weight_threshold
 
-        # client_parameters[i] is the parameters of model trained by client i
+        # _client_weights[i] is the state dict of model trained by client i
         self._client_weights: List[Dict[str, Any]] = []
-        # _client_samples_processed[i] is the number of samples client i used for training
+        # _client_samples_processed[i] is the #samples client i trained with
         self._client_samples: List[int] = []
         # trust scores for each client
         self._client_trust: Dict[int, float] = {}
-        # used to store the weights used in an aggregation - updated each aggregation
+        # used to store the weights used in an aggregation
         self._client_score: List[float] = []
 
         # internal validation accuracy for each aggregation round
@@ -48,7 +48,6 @@ class Server:
 
     def _calculate_median_weights(self):
         """Calculate the median of weights across clients."""
-        num_params = len(self._client_weights[0])
         param_keys = list(self._client_weights[0].keys())
         median_weights = {}
 
@@ -84,8 +83,8 @@ class Server:
 
     def _compute_trust_scores(self):
         """
-        Compute the trust scores for each client based on the deviation of their weights
-        from the median.
+        Compute the trust scores for each client based on the deviation of
+        their weights from the median.
         """
         median_weights = self._calculate_median_weights()
         anomaly_scores: torch.Tensor = torch.Tensor([]).to(self._device)
@@ -126,15 +125,15 @@ class Server:
         correct = 0
         total = 0
         with torch.no_grad():
-            for images, labels in tqdm(self._validation_data, desc="Validating model"):
-                images, labels = images.to(self._device), labels.to(self._device)
+            for images, labels in tqdm(self._validation_data,
+                                       desc="Validating model"):
                 outputs = self._model(images)
                 _, predicted = torch.max(outputs.data, 1)
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
-
+            accuracy = 100 * correct / total
         print(
-            f"Accuracy of the network on the server validation images: {100 * correct / total:.2f}%"
+            f"Accuracy of the server on the validation images: {accuracy:.2f}%"
         )
 
         # add a row for each client to the performance log
@@ -154,7 +153,8 @@ class Server:
         num_samples: int,
     ):
         """
-        Add the parameters of a client to the server and the number of samples it used for training.
+        Add the parameters of a client to the server and the number of samples
+        it used for training.
         """
         client_id = len(self._client_weights)
         self._client_weights.append(client_state_dict)
@@ -170,20 +170,23 @@ class Server:
         self,
     ):
         """
-        Aggregate the parameters of all clients and update the model with the aggregated weights.
+        Aggregate the parameters of all clients and update the model with the
+        aggregated weights.
 
-        If adversary_protection is True, the server will compute trust scores for each client
-        and reweight their contributions to the aggregation.
+        If adversary_protection is True, the server will compute trust scores
+        for each client and reweight their contributions to the aggregation.
         """
         self._model.train()
 
-        # if we are using adversary protection, compute trust scores to reweight client contributions
+        # if we are using adversary protection, compute trust scores to
+        # reweight client contributions
         if self._enable_adversary_protection:
             self._compute_trust_scores()
 
         total_samples = sum(self._client_samples)
 
-        # this is the ratio of data client i has compared to all clients -- sums to 1
+        # this is the ratio of data client i has compared to all clients
+        # NOTE: sums to 1
         client_ratios = [
             self._client_samples[i] / total_samples
             for i in range(len(self._client_samples))
@@ -196,19 +199,25 @@ class Server:
             if self._client_trust[i] > self._weight_threshold
         ]
 
-        # this is the ratio of data client i has compared to all clients weighted by trust -- does NOT sum to 1 necessarily
+        # this is the ratio of data client i has compared to all clients
+        # weighted by trust -- NOTE: does NOT sum to 1 necessarily
         new_contribution = [
-            self._client_trust[i] * client_ratios[i] for i in weight_indices_to_use
+            self._client_trust[i] * client_ratios[i]
+            for i in weight_indices_to_use
         ]
 
         # normalize contributions to sum to 1
         total_new_contribution = sum(new_contribution)
         client_contributions = [
-            contribution / total_new_contribution for contribution in new_contribution
+            contribution / total_new_contribution
+            for contribution in new_contribution
         ]
+
+        # store the client scores for next round weighting
         self._client_score = client_contributions.copy()
 
-        client_weights_to_use = [self._client_weights[i] for i in weight_indices_to_use]
+        client_weights_to_use = [self._client_weights[i]
+                                 for i in weight_indices_to_use]
 
         # aggregate the weights into the server model
         aggregated_weights = {
@@ -220,9 +229,10 @@ class Server:
                 client_weights_to_use, client_contributions
             ):
                 for name, param in client_weight.items():
-                    # dp waits are prepended with _module. -- strip this for global model
+                    # dp waits are prepended with _module
                     name = name.replace("_module.", "")
-                    aggregated_weights[name] += param.clone().detach() * weight_fraction
+                    differential = param.clone().detach() * weight_fraction
+                    aggregated_weights[name] += differential
 
         self._model.load_state_dict(aggregated_weights, strict=True)
         self._client_weights.clear()

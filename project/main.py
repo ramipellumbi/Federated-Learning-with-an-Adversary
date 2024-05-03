@@ -3,10 +3,8 @@ import os
 import sys
 from typing import List
 
-import pandas as pd
 import torch
 import torch.utils.data
-from torchvision.datasets import MNIST
 
 from project.attacks.weight_attack import weight_attack
 from project.federated.client import (
@@ -84,7 +82,7 @@ if __name__ == "__main__":
             data_loader=dataloader.train_loaders[i],
             target_epsilon=target_epsilon,
             target_delta=target_delta,
-            num_epochs=num_rounds if L == -1 else num_rounds // L,
+            num_epochs=num_rounds,
             max_grad_norm=100.0,
             attack=attack,
         )
@@ -109,7 +107,7 @@ if __name__ == "__main__":
                 data_loader=dataloader.train_loaders[i],
                 target_epsilon=target_epsilon,
                 target_delta=target_delta,
-                num_epochs=num_rounds if L == -1 else num_rounds // L,
+                num_epochs=num_rounds,
                 max_grad_norm=100.0,
             )
         )

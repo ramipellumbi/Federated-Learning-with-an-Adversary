@@ -1,9 +1,8 @@
-from typing import Callable, Optional
+from typing import Callable
 
 import torch
 import torch.nn as nn
 import torch.utils.data
-from tqdm import tqdm
 
 from .public_client import PublicClient
 
@@ -18,7 +17,10 @@ class AdversarialClient(PublicClient):
         data_loader: torch.utils.data.DataLoader,
         attack: Callable[[nn.Module], nn.Module],
     ):
-        super().__init__(id=id, model=model, device=device, data_loader=data_loader)
+        super().__init__(id=id,
+                         model=model,
+                         device=device,
+                         data_loader=data_loader)
         self.set_attack(attack)
 
     def train_communication_round(self, L: int):

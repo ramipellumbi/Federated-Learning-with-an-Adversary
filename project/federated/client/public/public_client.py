@@ -1,11 +1,6 @@
-from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
-
 import torch
 import torch.nn as nn
 import torch.utils.data
-from typing import List, Optional
-from tqdm import tqdm
 from torchvision.datasets.mnist import MNIST
 
 
@@ -14,9 +9,9 @@ from project.federated.client.base_client import BaseClient
 
 class PublicClient(BaseClient):
     """
-    Client is responsible for training an epoch and returning its updated weights
+    Client is responsible for training an epoch and returning its updated
+    weights
     """
-
     def __init__(
         self,
         id: str,

@@ -11,7 +11,7 @@ if __name__ == "__main__":
         batch_size=64, device=device("mps"), n_clients=10, use_iid=use_iid
     )
 
-    # plot the label distribution for the training set, validation set, and test set
+    # plot the label distribution for the training, validation, and test set
     label_counts = data_loader.get_label_distribution("train")
     if isinstance(label_counts, list):
         for i, label_count in enumerate(label_counts):

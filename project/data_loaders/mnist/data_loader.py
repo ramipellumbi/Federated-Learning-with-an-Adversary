@@ -1,40 +1,13 @@
 from collections import defaultdict
-import copy
-from typing import Any, Dict, List, Union, Literal
+from typing import Dict, List, Union, Literal
 
 import numpy as np
-from opacus.optimizers.optimizer import Optional
 from sklearn.model_selection import train_test_split
 import torch.utils.data
 from torch.utils.data.dataloader import default_collate
 from torch.utils.data.dataset import Subset
 from torchvision import datasets, transforms
 from torchvision.datasets.mnist import MNIST
-
-
-def create_mislabeled_dataset(
-    dataset: torch.utils.data.Subset[MNIST],
-) -> torch.utils.data.Subset[MNIST]:
-    """
-    Modify the dataset to have mislabeled targets intentionally.
-    """
-    # Deepcopy to avoid modifying the original dataset
-    adversarial_dataset: Any = copy.deepcopy(dataset)
-    all_labels = list(set(adversarial_dataset.dataset.targets.numpy()))
-
-    # Mislabeled strategy: Increment each label to next class modulo the number of classes
-    for i in range(len(adversarial_dataset.indices)):
-        # Retrieve original index to access and modify its label
-        original_idx = adversarial_dataset.indices[i]
-        original_label = adversarial_dataset.dataset.targets[original_idx].item()
-        adversarial_label = (original_label + 1) % len(all_labels)
-        adversarial_dataset.dataset.targets[original_idx] = torch.tensor(
-            adversarial_label
-        )
-
-    subset = Subset(adversarial_dataset.dataset, adversarial_dataset.indices)
-
-    return subset
 
 
 class DataLoader:
@@ -72,7 +45,8 @@ class DataLoader:
             transform=transforms.Compose(
                 [
                     transforms.ToTensor(),
-                    transforms.Normalize((self.MNIST_MEAN,), (self.MNIST_STD,)),
+                    transforms.Normalize((self.MNIST_MEAN,),
+                                         (self.MNIST_STD,)),
                 ]
             ),
         )
@@ -84,7 +58,8 @@ class DataLoader:
             transform=transforms.Compose(
                 [
                     transforms.ToTensor(),
-                    transforms.Normalize((self.MNIST_MEAN,), (self.MNIST_STD,)),
+                    transforms.Normalize((self.MNIST_MEAN,),
+                                         (self.MNIST_STD,)),
                 ]
             ),
         )
@@ -153,12 +128,15 @@ class DataLoader:
             allocated_indices = 0
             for client_id in range(n_clients):
                 client_specific_indices = indices[
-                    allocated_indices : allocated_indices + min_samples_per_label
+                    allocated_indices: allocated_indices + min_samples_per_label
                 ]
                 client_indices[client_id].extend(client_specific_indices)
                 allocated_indices += min_samples_per_label
+
+                # Break if we've allocated min samples and cannot fulfill
+                # another full round
                 if allocated_indices + min_samples_per_label > len(indices):
-                    break  # Break if we've allocated min samples and cannot fulfill another full round
+                    break
 
         # Allocate remaining data in a non-i.i.d fashion
         for label, indices in label_to_indices.items():
@@ -167,8 +145,9 @@ class DataLoader:
             ]  # Get remaining indices after min allocation
             np.random.shuffle(remaining_indices)
 
-            # Generate proportions with a strong skew for uneven distribution of the remaining data
-            alpha = np.random.random(n_clients) * 10  # Encourage skewed allocation
+            # Generate proportions with a strong skew for uneven distribution
+            # of the remaining data
+            alpha = np.random.random(n_clients) * 10
             proportions_remaining = np.random.dirichlet(alpha)
 
             # Calculate end indices based on proportions for remaining data
@@ -197,7 +176,8 @@ class DataLoader:
     ) -> List[Subset[MNIST]]:
         # Splitting the dataset indices among N clients
         split_indices = np.array_split(indices, n_clients)
-        subsets = [Subset(dataset, indices.tolist()) for indices in split_indices]
+        subsets = [Subset(dataset, indices.tolist())
+                   for indices in split_indices]
         return subsets
 
     def _create_data_loaders(
@@ -209,7 +189,8 @@ class DataLoader:
             loader = torch.utils.data.DataLoader(
                 dataset,
                 batch_size=batch_size,
-                collate_fn=lambda x: tuple(x_.to(device) for x_ in default_collate(x)),
+                collate_fn=lambda x: tuple(x_.to(device)
+                                           for x_ in default_collate(x)),
                 pin_memory=True,
             )
             loaders.append(loader)

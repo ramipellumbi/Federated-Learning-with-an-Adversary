@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from itertools import cycle, islice
-from typing import Any, Callable, Dict, Iterator, List, Tuple, Optional, Union
+from typing import Any, Callable, Dict, List, Tuple, Optional, Union
 
 from opacus.optimizers import DPOptimizer
 import pandas as pd
