@@ -78,4 +78,4 @@ python project/main.py --n_clients 10 --n_adv 2 --noise_multiplier 0.1 --n_round
 
 ## Results
 
-Results, including model performance metrics and federated learning round statistics, are saved automatically at the end of training in the `results/` directory. The `utilities.py` file includes functions for saving and parsing these results in a structured manner.
+Results, including model performance metrics and federated learning round statistics, are saved automatically at the end of training in the `project/results/` directory. The `utilities.py` file includes functions for saving and parsing these results in a structured manner.
