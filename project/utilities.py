@@ -4,9 +4,9 @@ from typing import List
 
 import pandas as pd
 
-from project.federated.server import Server
-from project.setup import FederatedLearningConfig
-from project.training import TClient
+from federated.server import Server
+from setup import FederatedLearningConfig
+from training import TClient
 
 
 def save_results(

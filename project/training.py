@@ -4,13 +4,13 @@ import torch
 import torch.utils.data
 from torchvision.datasets import MNIST
 
-from project.federated.client import (
+from federated.client import (
     PublicClient,
     AdversarialClient,
     PrivateClient,
     PrivateAdversarialClient,
 )
-from project.federated.server import Server
+from federated.server import Server
 
 TClient = Union[
     PublicClient, AdversarialClient, PrivateClient, PrivateAdversarialClient

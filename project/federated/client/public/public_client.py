@@ -4,7 +4,7 @@ import torch.utils.data
 from torchvision.datasets.mnist import MNIST
 
 
-from project.federated.client.base_client import BaseClient
+from federated.client.base_client import BaseClient
 
 
 class PublicClient(BaseClient):
@@ -12,6 +12,7 @@ class PublicClient(BaseClient):
     Client is responsible for training an epoch and returning its updated
     weights
     """
+
     def __init__(
         self,
         id: str,

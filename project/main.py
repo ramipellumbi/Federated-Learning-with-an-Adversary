@@ -6,26 +6,21 @@ from typing import List
 import torch
 import torch.utils.data
 
-from project.attacks.weight_attack import weight_attack
-from project.federated.client import (
+from attacks.weight_attack import weight_attack
+from federated.client import (
     AdversarialClient,
     PrivateClient,
     PrivateAdversarialClient,
     PublicClient,
 )
-from project.federated.server import Server
-from project.data_loaders.mnist.data_loader import DataLoader
-from project.models.mnist.mnist_cnn import MnistCNN as Model
-from project.setup import get_command_line_args
-from project.training import train_model, test_model, TClient
-from project.utilities import save_results
+from federated.server import Server
+from data_loaders.mnist.data_loader import DataLoader
+from models.mnist.mnist_cnn import MnistCNN as Model
+from setup import get_command_line_args
+from training import train_model, test_model, TClient
+from utilities import save_results
 
-# Get the absolute path of the project root
-project_root = os.path.dirname(os.path.abspath(__file__))
-
-# Append the project root to sys.path
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 if __name__ == "__main__":

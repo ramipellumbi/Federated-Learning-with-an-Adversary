@@ -9,7 +9,7 @@ import torch.nn as nn
 import torch.utils.data
 from torchvision.datasets.mnist import MNIST
 
-from project.federated.client.base_client import BaseClient
+from federated.client.base_client import BaseClient
 
 
 class PrivateClient(BaseClient):
@@ -51,8 +51,7 @@ class PrivateClient(BaseClient):
         # csprng does not work with this version of PyTorch & Python.
         # all setting False does is potentially use non secure parallel RNG.
         # Fine for testing.
-        self._privacy_engine = PrivacyEngine(secure_mode=False,
-                                             accountant="rdp")
+        self._privacy_engine = PrivacyEngine(secure_mode=False, accountant="rdp")
 
         if not ModuleValidator.is_valid(self._model):
             module = ModuleValidator.fix(self._model)
