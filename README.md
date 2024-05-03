@@ -12,20 +12,26 @@ This project enables experimentation with:
 - Differential privacy to protect client data
 - The impact of dataset distribution (IID vs. non-IID) on learning
 
-## Project Structure
+## Project Files
 
 - `project/`
-  - `federated/`: Contains implementations for the server and client models.
+  - `attacks/`: Contains adversarial attacks on the weights a
+  client sends to the server.
   - `data_loaders/`: Data loading utilities for MNIST.
-  - `main.py`: Entry point for running the experiments.
+  - `federated/`: Contains implementations for the server and client models.
+    - `client/`: Contains the implementation of a client, differentially private client, adversarial client, and
+    differentially private adversarial client.
+    - `server.py`: Contains the implementation of the server, which aggregates the weights from clients after a communication round.
   - `models/`: Contains the neural network models used in experiments.
-  - `setup.py`: Command line argument parsing and configuration setup.
-  - `training.py`: Training loops for federated learning.
+  - `results/`: Contains the results of the experiments.
+  - `main.py`: Entry point for running the experiments.
+  - `setup.py`: Command line argument parsing, validation, and configuration.
+  - `training.py`: Training and evaluation loops for federated learning.
   - `utilities.py`: Helper functions for saving and loading results.
 
 ## Dependencies
 
-Found in `requirements.txt`.
+Found in [`requirements.txt`](./requirements.txt).
 
 ## Getting Started
 
@@ -72,4 +78,4 @@ python project/main.py --n_clients 10 --n_adv 2 --noise_multiplier 0.1 --n_round
 
 ## Results
 
-Results, including model performance metrics and federated learning round statistics, are saved automatically at the end of training. The `utilities.py` file includes functions for saving these results in a structured manner.
+Results, including model performance metrics and federated learning round statistics, are saved automatically at the end of training in the `results/` directory. The `utilities.py` file includes functions for saving and parsing these results in a structured manner.

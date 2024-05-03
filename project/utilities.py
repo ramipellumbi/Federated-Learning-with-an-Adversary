@@ -1,14 +1,9 @@
+import os
 import re
 from typing import List
 
 import pandas as pd
 
-from project.federated.client import (
-    PublicClient,
-    AdversarialClient,
-    PrivateClient,
-    PrivateAdversarialClient,
-)
 from project.federated.server import Server
 from project.setup import FederatedLearningConfig
 from project.training import TClient
@@ -45,12 +40,15 @@ def save_results(
     client_save_name = f"project/results/FL_Config_NClients{n_clients}_NAdv{n_adv}_NoiseMultiplier{noise_multiplier}_NRounds{n_rounds}_L{L}_BatchSize{batch_size}_IID{should_use_iid_training_data}_AdvProt{should_enable_adv_protection}_PrivClients{should_use_private_clients}_Eps{target_epsilon}_Delta{target_delta}_TrustThreshold{trust_threshold}"
     server_save_name = f"project/results/FL_Config_NClients{n_clients}_NAdv{n_adv}_NoiseMultiplier{noise_multiplier}_NRounds{n_rounds}_L{L}_BatchSize{batch_size}_IID{should_use_iid_training_data}_AdvProt{should_enable_adv_protection}_PrivClients{should_use_private_clients}_Eps{target_epsilon}_Delta{target_delta}_TrustThreshold{trust_threshold}_server"
 
+    # create project/results folder if it does not exist
+    os.makedirs("project/results", exist_ok=True)
+
     df.to_csv(client_save_name, index=False)
     server.val_performance.to_csv(server_save_name, index=False)
 
 
 def parse_filename_to_config(filename: str) -> FederatedLearningConfig:
-    # Define a regular expression pattern to match the components in the filename
+    # Define a regex pattern to match the components in the filename
     pattern = (
         r"FL_Config_NClients(\d+)_NAdv(\d+)_NoiseMultiplier([\d.]+)_NRounds(\d+)_L(-?\d+)_"
         r"BatchSize(\d+)_IID(.*?)_AdvProt(.*?)_PrivClients(.*?)_Eps([\d.]+)_Delta([\d.]+)_TrustThreshold([\d.]+)"
@@ -74,7 +72,7 @@ def parse_filename_to_config(filename: str) -> FederatedLearningConfig:
     target_delta = float(match.group(11))
     trust_threshold = float(match.group(12))
 
-    # Construct and return a FederatedLearningConfig instance from extracted values
+    # Construct and return a FederatedLearningConfig instance from values
     return FederatedLearningConfig(
         n_clients=n_clients,
         n_adv=n_adv,
