@@ -100,13 +100,13 @@ class DataLoader:
             self.val_dataset,
             batch_size=batch_size,
             collate_fn=lambda x: tuple(x_.to(device) for x_ in default_collate(x)),
-            pin_memory=True,
+            pin_memory=device.type != "cuda",
         )
         self._test_loader = torch.utils.data.DataLoader(
             self.test_dataset,
             batch_size=batch_size,
             collate_fn=lambda x: tuple(x_.to(device) for x_ in default_collate(x)),
-            pin_memory=True,
+            pin_memory=device.type != "cuda",
         )
 
     def _split_dataset_into_subsets_non_iid(
@@ -191,7 +191,7 @@ class DataLoader:
                 batch_size=batch_size,
                 collate_fn=lambda x: tuple(x_.to(device)
                                            for x_ in default_collate(x)),
-                pin_memory=True,
+                pin_memory=device.type != "cuda",
             )
             loaders.append(loader)
         return loaders

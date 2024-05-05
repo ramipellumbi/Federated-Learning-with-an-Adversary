@@ -50,7 +50,7 @@ def train_model(
             )
 
         server.aggregate_parameters(is_verbose)
-        if round % 2 == 0 or round == num_rounds - 1:
+        if round % 5 == 0 or round == num_rounds - 1:
             print(f"Round {round + 1} of {num_rounds}")
             val_acc = server.evaluate_model()
 
