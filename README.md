@@ -51,6 +51,7 @@ python project/main.py --n_clients 10 --n_adv 2 --noise_multiplier=0.1 --n_round
 is set up to run one experiment at a time. 
 - To perform multiple experiments, you can run the notebook `project/run_multiple_experiments.ipynb`, which is set up to
 perform multiple experiments with different configurations.
+- To evaluate / plot the results of experiments, you can run the notebook `project/evaluate.ipynb`.
 
 ### Command Line Arguments
 
