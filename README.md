@@ -47,8 +47,9 @@ Navigate to the root directory and run `python project/main.py` with desired arg
 python project/main.py --n_clients 10 --n_adv 2 --noise_multiplier=0.1 --n_rounds 5 --batch_size 64 --enable_adv_protection True --iid True
 ```
 
-If you would prefer to use a Jupyter notebook, you can run the `project/run_single_experiment.ipynb` notebook instead, which
-is set up to run one experiment at a time. To perform multiple experiments, you can run the notebook `project/run_multiple_experiments.ipynb`, which is set up to
+- If you would prefer to use a Jupyter notebook, you can run the `project/run_single_experiment.ipynb` notebook instead, which
+is set up to run one experiment at a time. 
+- To perform multiple experiments, you can run the notebook `project/run_multiple_experiments.ipynb`, which is set up to
 perform multiple experiments with different configurations.
 
 ### Command Line Arguments
