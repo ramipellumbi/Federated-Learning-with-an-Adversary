@@ -12,6 +12,8 @@ This project enables experimentation with:
 - Differential privacy to protect client data
 - The impact of dataset distribution (IID vs. non-IID) on learning
 
+For a full description of the problem and experimental results, refer to the [report](./report.pdf).
+
 ## Project Files
 
 - `project/`
