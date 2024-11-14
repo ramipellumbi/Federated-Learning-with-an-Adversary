@@ -2,14 +2,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from torch import device
 
-from data_loader import DataLoader
-
+from .data_loader import DataLoader
 
 if __name__ == "__main__":
     use_iid = False
-    data_loader = DataLoader(
-        batch_size=64, device=device("mps"), n_clients=2, use_iid=use_iid
-    )
+    data_loader = DataLoader(batch_size=64, device=device("mps"), n_clients=2, use_iid=use_iid)
 
     # plot the label distribution for the training, validation, and test set
     label_counts = data_loader.get_label_distribution("train")

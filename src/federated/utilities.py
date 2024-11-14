@@ -4,9 +4,10 @@ from typing import List, Tuple
 
 import pandas as pd
 
-from federated.server import Server
-from setup import FederatedLearningConfig
-from training import TClient
+from federated.federated.server import Server
+
+from .setup import FederatedLearningConfig
+from .training import TClient
 
 
 def get_filenames_from_config(config: FederatedLearningConfig) -> Tuple[str, str]:
@@ -15,7 +16,7 @@ def get_filenames_from_config(config: FederatedLearningConfig) -> Tuple[str, str
     # remove the .0 suffix from the float
     noise_multiplier = str(config.noise_multiplier).rstrip("0").rstrip(".")
     n_rounds = config.n_rounds
-    L = config.L
+    num_internal_rounds = config.L
     batch_size = config.batch_size
     should_use_iid_training_data = config.should_use_iid_training_data
     should_enable_adv_protection = config.should_enable_adv_protection
@@ -25,8 +26,8 @@ def get_filenames_from_config(config: FederatedLearningConfig) -> Tuple[str, str
     trust_threshold = str(config.trustworthy_threshold).rstrip("0").rstrip(".")
 
     # Save name that has n_clients, n_adv, noise_multiplier, n_rounds, L, batch_size, should_use_iid_training_data, should_enable_adv_protection, target_epsilon, target_delta
-    client_save_name = f"results/FL_Config_NClients{n_clients}_NAdv{n_adv}_NoiseMultiplier{noise_multiplier}_NRounds{n_rounds}_L{L}_BatchSize{batch_size}_IID{should_use_iid_training_data}_AdvProt{should_enable_adv_protection}_PrivClients{should_use_private_clients}_Eps{target_epsilon}_Delta{target_delta}_TrustThreshold{trust_threshold}.csv"
-    server_save_name = f"results/FL_Config_NClients{n_clients}_NAdv{n_adv}_NoiseMultiplier{noise_multiplier}_NRounds{n_rounds}_L{L}_BatchSize{batch_size}_IID{should_use_iid_training_data}_AdvProt{should_enable_adv_protection}_PrivClients{should_use_private_clients}_Eps{target_epsilon}_Delta{target_delta}_TrustThreshold{trust_threshold}_server.csv"
+    client_save_name = f"results/FL_Config_NClients{n_clients}_NAdv{n_adv}_NoiseMultiplier{noise_multiplier}_NRounds{n_rounds}_L{num_internal_rounds}_BatchSize{batch_size}_IID{should_use_iid_training_data}_AdvProt{should_enable_adv_protection}_PrivClients{should_use_private_clients}_Eps{target_epsilon}_Delta{target_delta}_TrustThreshold{trust_threshold}.csv"
+    server_save_name = f"results/FL_Config_NClients{n_clients}_NAdv{n_adv}_NoiseMultiplier{noise_multiplier}_NRounds{n_rounds}_L{num_internal_rounds}_BatchSize{batch_size}_IID{should_use_iid_training_data}_AdvProt{should_enable_adv_protection}_PrivClients{should_use_private_clients}_Eps{target_epsilon}_Delta{target_delta}_TrustThreshold{trust_threshold}_server.csv"
 
     return client_save_name, server_save_name
 
@@ -69,7 +70,7 @@ def parse_filename_to_config(filename: str) -> FederatedLearningConfig:
         # add 0 after TrustThreshold if it is missing
         w = "TrustThreshold"
         loc = filename.find(w)
-        new_filename = filename[:loc + len(w)] + "0" + filename[loc + len(w):]
+        new_filename = filename[: loc + len(w)] + "0" + filename[loc + len(w) :]
         match = re.search(pattern, new_filename)
         if not match:
             raise ValueError(f"Filename format does not match expected pattern: {new_filename}")
@@ -84,13 +85,13 @@ def parse_filename_to_config(filename: str) -> FederatedLearningConfig:
     n_adv = int(match.group(2))
     noise_multiplier = float(match.group(3))
     n_rounds = int(match.group(4))
-    L = int(match.group(5))
+    num_internal_rounds = int(match.group(5))
     batch_size = int(match.group(6))
     should_use_iid_training_data = match.group(7) == "True"
     should_enable_adv_protection = match.group(8) == "True"
     should_use_private_clients = match.group(9) == "True"
-    target_epsilon = float(match.group(10)) if match.group(10) != 'None' else None
-    target_delta = float(match.group(11)) if match.group(11) != 'None' else None
+    target_epsilon = float(match.group(10)) if match.group(10) != "None" else 0.0
+    target_delta = float(match.group(11)) if match.group(11) != "None" else 0.0
     trust_threshold = float(match.group(12).strip("."))
 
     # Construct and return a FederatedLearningConfig instance from values
@@ -99,7 +100,7 @@ def parse_filename_to_config(filename: str) -> FederatedLearningConfig:
         n_adv=n_adv,
         noise_multiplier=noise_multiplier,
         n_rounds=n_rounds,
-        L=L,
+        L=num_internal_rounds,
         batch_size=batch_size,
         should_use_iid_training_data=should_use_iid_training_data,
         should_enable_adv_protection=should_enable_adv_protection,

@@ -3,8 +3,7 @@ import torch.nn as nn
 import torch.utils.data
 from torchvision.datasets.mnist import MNIST
 
-
-from federated.client.base_client import BaseClient
+from federated.federated.client.base_client import BaseClient
 
 
 class PublicClient(BaseClient):
@@ -35,9 +34,9 @@ class PublicClient(BaseClient):
 
     def train_communication_round(
         self,
-        L: int,
+        num_internal_rounds: int,
         is_verbose: bool,
     ):
-        mean_loss, tr_acc = self._train_communication_round(self._data, L, is_verbose)
+        mean_loss, tr_acc = self._train_communication_round(self._data, num_internal_rounds, is_verbose)
 
         return mean_loss, tr_acc, None, None

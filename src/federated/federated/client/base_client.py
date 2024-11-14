@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from itertools import cycle, islice
-from typing import Any, Callable, Dict, List, Tuple, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from opacus.optimizers import DPOptimizer
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.utils.data
+from opacus.optimizers import DPOptimizer
 from torchvision.datasets.mnist import MNIST
 from tqdm import tqdm
 
@@ -98,35 +98,27 @@ class BaseClient(ABC):
         self._model.eval()
         correct = 0
         with torch.no_grad():
-            for x, y in tqdm(
-                self._data, desc=f"{self._id} | Train Accuracy", disable=not is_verbose
-            ):
+            for x, y in tqdm(self._data, desc=f"{self._id} | Train Accuracy", disable=not is_verbose):
                 x, y = x.to(self._device), y.to(self._device)
                 yhat = self._model(x)
                 correct += (yhat.argmax(1) == y).sum().item()
         return correct / self._num_samples
 
     def _train_communication_round(
-        self, data_loader: torch.utils.data.DataLoader[MNIST], L: int, is_verbose: bool
+        self, data_loader: torch.utils.data.DataLoader[MNIST], num_internal_rounds: int, is_verbose: bool
     ):
-        if (
-            self._dataset_completed
-        ):  # Reset if dataset was fully iterated in previous training
+        if self._dataset_completed:  # Reset if dataset was fully iterated in previous training
             self._current_index = 0
             self._dataset_completed = False
 
         self._model.train()
-        L = L if L != -1 else len(self._data)
+        num_internal_rounds = num_internal_rounds if num_internal_rounds != -1 else len(self._data)
         losses = []
 
         cyclic_data_loader = cycle(data_loader)
-        sliced_data_loader = islice(
-            cyclic_data_loader, self._current_index, self._current_index + L
-        )
+        sliced_data_loader = islice(cyclic_data_loader, self._current_index, self._current_index + num_internal_rounds)
 
-        for x, y in tqdm(
-            sliced_data_loader, desc=f"{self._id} | Training", disable=not is_verbose
-        ):
+        for x, y in tqdm(sliced_data_loader, desc=f"{self._id} | Training", disable=not is_verbose):
             x, y = x.to(self._device), y.to(self._device)
             yhat = self._model(x)
             self._optimizer.zero_grad()
@@ -136,7 +128,7 @@ class BaseClient(ABC):
             losses.append(loss.item())
             self._optimizer.step()
 
-        self._current_index = (self._current_index + L) % self._num_samples
+        self._current_index = (self._current_index + num_internal_rounds) % self._num_samples
         losses = torch.Tensor(losses)
         training_accuracy = self._get_training_accuracy(is_verbose)
 
@@ -145,7 +137,7 @@ class BaseClient(ABC):
     @abstractmethod
     def train_communication_round(
         self,
-        L: int,
+        num_internal_rounds: int,
         is_verbose: bool,
     ) -> Tuple[float, float, Optional[float], Optional[float]]:
         """
@@ -183,11 +175,11 @@ class BaseClient(ABC):
         """
         self._model.load_state_dict(server_state_dict, strict=True)
 
-    def train_round(self, L: int, is_verbose: bool):
+    def train_round(self, num_internal_rounds: int, is_verbose: bool):
         """
         Run a federated learning training epoch on the client
         """
-        loss, tr_acc, epsilon, delta = self.train_communication_round(L, is_verbose)
+        loss, tr_acc, epsilon, delta = self.train_communication_round(num_internal_rounds, is_verbose)
 
         self._train_history.append(
             {
@@ -200,7 +192,5 @@ class BaseClient(ABC):
             }
         )
         if is_verbose:
-            self.log_epoch(
-                loss=loss, training_accuracy=tr_acc, epsilon=epsilon, delta=delta
-            )
+            self.log_epoch(loss=loss, training_accuracy=tr_acc, epsilon=epsilon, delta=delta)
         self._epochs_trained += 1

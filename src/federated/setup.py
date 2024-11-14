@@ -52,28 +52,18 @@ def validate_command_line_arguments(args):
     assert isinstance(args.n_clients, int), "Number of clients must be an integer"
     assert args.n_clients > 0, "Number of clients must be greater than 0"
 
-    assert isinstance(
-        args.trust_threshold, float
-    ), "Trustworthy threshold must be a float"
-    assert (
-        0 <= args.trust_threshold <= 1
-    ), "Trustworthy threshold must be between 0 and 1"
+    assert isinstance(args.trust_threshold, float), "Trustworthy threshold must be a float"
+    assert 0 <= args.trust_threshold <= 1, "Trustworthy threshold must be between 0 and 1"
 
     # assert that the number of adversaries is a non-negative integer and less than the number of clients
     assert isinstance(args.n_adv, int), "Number of adversaries must be an integer"
     assert args.n_adv >= 0, "Number of adversaries must be non-negative"
-    assert (
-        args.n_adv < args.n_clients
-    ), "Number of adversaries must be less than number of clients"
+    assert args.n_adv < args.n_clients, "Number of adversaries must be less than number of clients"
 
     # if the number of adversaries is greater than 0, assert that the noise multiplier is provided and greater than 0
     if args.n_adv > 0:
-        assert (
-            args.noise_multiplier != -1
-        ), "Noise multiplier must be provided when using adversaries"
-        assert isinstance(
-            args.noise_multiplier, float
-        ), "Noise multiplier must be a float"
+        assert args.noise_multiplier != -1, "Noise multiplier must be provided when using adversaries"
+        assert isinstance(args.noise_multiplier, float), "Noise multiplier must be a float"
         assert args.noise_multiplier >= 0, "Noise multiplier must be positive"
 
     # assert that the number of epochs is a positive integer
@@ -87,16 +77,12 @@ def validate_command_line_arguments(args):
     assert isinstance(args.batch_size, int), "Batch size must be an integer"
 
     # assert that use differential privacy is a boolean
-    assert isinstance(
-        args.use_differential_privacy, bool
-    ), "Use differential privacy must be a boolean"
+    assert isinstance(args.use_differential_privacy, bool), "Use differential privacy must be a boolean"
 
     # if differential privacy is enabled, assert that epsilon and delta are provided
     if args.use_differential_privacy:
         if args.eps == -1 or args.delta == -1:
-            raise ValueError(
-                "If you want to use private clients, you must provide epsilon and delta"
-            )
+            raise ValueError("If you want to use private clients, you must provide epsilon and delta")
 
         assert args.eps > 0, "Epsilon must be greater than 0"
         assert isinstance(args.eps, float), "Epsilon must be a float"
@@ -108,9 +94,7 @@ def validate_command_line_arguments(args):
     assert isinstance(args.iid, bool), "IID must be a boolean"
 
     # assert that the enable adv protection flag is a boolean
-    assert isinstance(
-        args.enable_adv_protection, bool
-    ), "Enable adv protection must be a boolean"
+    assert isinstance(args.enable_adv_protection, bool), "Enable adv protection must be a boolean"
 
 
 def get_command_line_args():
@@ -142,9 +126,7 @@ def get_command_line_args():
     # batch size a client trains on
     parser.add_argument("--batch_size", type=int, default=64)
     # enable differential privacy
-    parser.add_argument(
-        "--use_differential_privacy", type=boolean_string, default=False
-    )
+    parser.add_argument("--use_differential_privacy", type=boolean_string, default=False)
     # epsilon for differential privacy. -1 means epsilon is not provided
     parser.add_argument("--eps", type=float, default=-1)
     # delta for differential privacy. -1 means delta is not provided

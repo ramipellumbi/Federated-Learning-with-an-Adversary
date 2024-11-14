@@ -1,15 +1,15 @@
 from typing import Any, Dict
 
+import torch
+import torch.nn as nn
+import torch.utils.data
 from opacus import GradSampleModule, PrivacyEngine
 from opacus.optimizers import DPOptimizer
 from opacus.utils.batch_memory_manager import BatchMemoryManager
 from opacus.validators import ModuleValidator
-import torch
-import torch.nn as nn
-import torch.utils.data
 from torchvision.datasets.mnist import MNIST
 
-from federated.client.base_client import BaseClient
+from federated.federated.client.base_client import BaseClient
 
 
 class PrivateClient(BaseClient):
@@ -76,22 +76,16 @@ class PrivateClient(BaseClient):
         self.set_optimizer(_optimizer)
         self.set_data_loader(_data_loader)
 
-    def train_communication_round(self, L: int, is_verbose: bool):
-        assert isinstance(
-            self._model, GradSampleModule
-        ), "Model must be GradSampleModule for DP training"
-        assert isinstance(
-            self._optimizer, DPOptimizer
-        ), "Optimizer must be DPOptimizer for DP training"
+    def train_communication_round(self, num_internal_rounds: int, is_verbose: bool):
+        assert isinstance(self._model, GradSampleModule), "Model must be GradSampleModule for DP training"
+        assert isinstance(self._optimizer, DPOptimizer), "Optimizer must be DPOptimizer for DP training"
 
         with BatchMemoryManager(
             data_loader=self._data,
             max_physical_batch_size=64,
             optimizer=self._optimizer,
         ) as memory_safe_loader:
-            mean_loss, tr_acc = self._train_communication_round(
-                memory_safe_loader, L, is_verbose
-            )
+            mean_loss, tr_acc = self._train_communication_round(memory_safe_loader, num_internal_rounds, is_verbose)
             epsilon = self._privacy_engine.accountant.get_epsilon(delta=self._td)
 
         return mean_loss, tr_acc, epsilon, self._td

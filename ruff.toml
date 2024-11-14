@@ -1,0 +1,9 @@
+# Config https://docs.astral.sh/ruff/configuration/
+line-length = 120
+indent-width = 4
+
+[lint]
+select = ["E", "F", "UP", "B", "I", "N"]
+fixable = ["ALL"]
+unfixable = []
+ignore = ["E501", "E712"]

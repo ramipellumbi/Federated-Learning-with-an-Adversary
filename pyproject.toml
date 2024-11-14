@@ -1,0 +1,31 @@
+[project]
+name = "federated"
+version = "0.1.0"
+description = "Byzantine Robust Federated Learning"
+authors = [
+    { name = "Rami Pellumbi", email = "98100379+ramipellumbi@users.noreply.github.com" },
+]
+dependencies = [
+    "matplotlib",
+    "opacus",
+    "pandas",
+    "torch",
+    "torchaudio",
+    "torchvision",
+    "tqdm",
+    "scikit-learn>=1.5.2",
+]
+requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "MIT" }
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+
+[tool.pdm]
+distribution = true
+
+[tool.pdm.dev-dependencies]
+dev = ["ruff>=0.7.3"]

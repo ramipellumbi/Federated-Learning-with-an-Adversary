@@ -1,18 +1,18 @@
-from typing import List, Union
+from typing import List
 
 import torch
 import torch.utils.data
 from torchvision.datasets import MNIST
 
-from federated.client import TClient
-from federated.server import Server
+from federated.federated.client import TClient
+from federated.federated.server import Server
 
 
 def train_model(
     *,
     server: Server,
     num_rounds: int,
-    L: int,
+    num_internal_rounds: int,
     clients: List[TClient],
     is_verbose: bool,
     patience: int = 5,
@@ -43,10 +43,10 @@ def train_model(
         for i in range(num_clients):
             current_client = clients[i]
             current_client.update_parameters(server.model.state_dict())
-            current_client.train_round(L, is_verbose)
+            current_client.train_round(num_internal_rounds, is_verbose)
             server.add_client_parameters(
                 current_client.model.state_dict(),
-                current_client.num_batches if L == -1 else L,
+                current_client.num_batches if num_internal_rounds == -1 else num_internal_rounds,
             )
 
         server.aggregate_parameters(is_verbose)
@@ -83,6 +83,4 @@ def test_model(
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
-        print(
-            f"Accuracy of the network on the test images: {100 * correct / total:.2f}%"
-        )
+        print(f"Accuracy of the network on the test images: {100 * correct / total:.2f}%")

@@ -1,24 +1,24 @@
-from functools import partial
 import os
 import sys
+from functools import partial
 from typing import List
 
 import torch
 
-from attacks.weight_attack import weight_attack
-from federated.client import (
+from federated.attacks.weight_attack import weight_attack
+from federated.data_loaders.mnist.data_loader import DataLoader
+from federated.federated.client import (
     AdversarialClient,
-    PrivateClient,
     PrivateAdversarialClient,
+    PrivateClient,
     PublicClient,
     TClient,
 )
-from federated.server import Server
-from data_loaders.mnist.data_loader import DataLoader
-from models.mnist.mnist_cnn import MnistCNN as Model
-from setup import get_command_line_args
-from training import train_model, test_model
-from utilities import save_results
+from federated.federated.server import Server
+from federated.models.mnist.mnist_cnn import MnistCNN as Model
+from federated.setup import get_command_line_args
+from federated.training import test_model, train_model
+from federated.utilities import save_results
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -112,9 +112,7 @@ if __name__ == "__main__":
     clients = adv_clients + non_adv_clients
     assert len(clients) == n_clients
 
-    train_model(
-        server=server, num_rounds=num_rounds, clients=clients, L=L, is_verbose=True
-    )
+    train_model(server=server, num_rounds=num_rounds, clients=clients, num_internal_rounds=L, is_verbose=True)
 
     test_model(
         model=server.model,

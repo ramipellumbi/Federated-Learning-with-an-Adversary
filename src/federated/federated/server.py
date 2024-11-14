@@ -1,11 +1,11 @@
 from typing import Any, Dict, List, Union
 
 import pandas as pd
-from tqdm import tqdm
 import torch
 import torch.nn as nn
 import torch.utils.data
 from torchvision.datasets import MNIST
+from tqdm import tqdm
 
 
 class Server:
@@ -54,9 +54,7 @@ class Server:
         # For each parameter, stack across clients and calculate median
         for key in param_keys:
             # move to CPU because MPS does not support >4 dimensional tensors
-            stacked_params = torch.stack(
-                [client[key].to("cpu") for client in self._client_weights]
-            )
+            stacked_params = torch.stack([client[key].to("cpu") for client in self._client_weights])
             median, _ = torch.median(stacked_params, dim=0)
             median_weights[key] = median.to(self._device)
 
@@ -184,34 +182,23 @@ class Server:
 
         # this is the ratio of data client i has compared to all clients
         # NOTE: sums to 1
-        client_ratios = [
-            self._client_samples[i] / total_samples
-            for i in range(len(self._client_samples))
-        ]
+        client_ratios = [self._client_samples[i] / total_samples for i in range(len(self._client_samples))]
 
         # only use clients with trust scores above the threshold
         weight_indices_to_use = [
-            i
-            for i in range(len(self._client_weights))
-            if self._client_trust[i] > self._weight_threshold
+            i for i in range(len(self._client_weights)) if self._client_trust[i] > self._weight_threshold
         ]
         if is_verbose:
-            print(
-                f"Using {len(weight_indices_to_use)} clients out of {len(self._client_weights)}"
-            )
+            print(f"Using {len(weight_indices_to_use)} clients out of {len(self._client_weights)}")
             print(f"Clients to use: {weight_indices_to_use}")
 
         # this is the ratio of data client i has compared to all clients
         # weighted by trust -- NOTE: does NOT sum to 1 necessarily
-        new_contribution = [
-            self._client_trust[i] * client_ratios[i] for i in weight_indices_to_use
-        ]
+        new_contribution = [self._client_trust[i] * client_ratios[i] for i in weight_indices_to_use]
 
         # normalize contributions to sum to 1
         total_new_contribution = sum(new_contribution)
-        client_contributions = [
-            contribution / total_new_contribution for contribution in new_contribution
-        ]
+        client_contributions = [contribution / total_new_contribution for contribution in new_contribution]
         if is_verbose:
             print(f"Client contributions: {client_contributions}")
 
@@ -222,13 +209,10 @@ class Server:
 
         # aggregate the weights into the server model
         aggregated_weights = {
-            name: torch.zeros_like(param, device=self._device)
-            for name, param in self._model.named_parameters()
+            name: torch.zeros_like(param, device=self._device) for name, param in self._model.named_parameters()
         }
         with torch.no_grad():
-            for client_weight, weight_fraction in zip(
-                client_weights_to_use, client_contributions
-            ):
+            for client_weight, weight_fraction in zip(client_weights_to_use, client_contributions):
                 for name, param in client_weight.items():
                     # dp waits are prepended with _module
                     name = name.replace("_module.", "")
