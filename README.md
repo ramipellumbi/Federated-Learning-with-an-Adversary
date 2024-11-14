@@ -16,13 +16,13 @@ For a full description of the problem and experimental results, refer to the [re
 
 ## Project Files
 
-- `project/`
+- `src/federated/`
   - `attacks/`: Contains adversarial attacks on the weights a
-  client sends to the server.
+    client sends to the server.
   - `data_loaders/`: Data loading utilities for MNIST.
   - `federated/`: Contains implementations for the server and client models.
     - `client/`: Contains the implementation of a client, differentially private client, adversarial client, and
-    differentially private adversarial client.
+      differentially private adversarial client.
     - `server.py`: Contains the implementation of the server, which aggregates the weights from clients after a communication round.
   - `models/`: Contains the neural network models used in experiments.
   - `results/`: Contains the results of the experiments.
@@ -33,26 +33,37 @@ For a full description of the problem and experimental results, refer to the [re
 
 ## Dependencies
 
-Found in [`requirements.txt`](./requirements.txt).
+Found in [`pyproject.toml`](./pyproject.toml). This project used `pdm`.
 
 ## Getting Started
 
-To run the project, you will first need to install its dependencies. We recommend creating a virtual environment to manage the dependencies.
+To run the project, you will first need to install its dependencies. We recommend creating a virtual environment to manage the dependencies:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+Then, install the dependencies:
+
+```bash
+pdm install
+```
 
 Once dependencies are installed, you can execute the project with custom configurations through command-line arguments.
 
 ### Running the Project
 
-Navigate to the root directory and run `python project/main.py` with desired arguments, e.g., to run the project with 10 clients, including 2 adversarial, for 5 rounds with IID data, use the following command:
+Navigate to the root directory and run `python -m federated.main` with desired arguments, e.g., to run the project with 10 clients, including 2 adversarial, for 5 rounds with IID data, use the following command:
 
 ```bash
-python project/main.py --n_clients 10 --n_adv 2 --noise_multiplier=0.1 --n_rounds 5 --batch_size 64 --enable_adv_protection True --iid True
+python -m federated.main --n_clients 10 --n_adv 2 --noise_multiplier=0.1 --n_rounds 5 --batch_size 64 --enable_adv_protection True --iid True
 ```
 
 - If you would prefer to use a Jupyter notebook, you can run the `project/run_single_experiment.ipynb` notebook instead, which
-is set up to run one experiment at a time. 
+  is set up to run one experiment at a time.
 - To perform multiple experiments, you can run the notebook `project/run_multiple_experiments.ipynb`, which is set up to
-perform multiple experiments with different configurations.
+  perform multiple experiments with different configurations.
 - To evaluate / plot the results of experiments, you can run the notebook `project/evaluate.ipynb`.
 
 ### Command Line Arguments
@@ -75,13 +86,13 @@ perform multiple experiments with different configurations.
 To run the project with 10 clients, including 2 adversarial, for 5 rounds with IID data, use the following command:
 
 ```bash
-python project/main.py --n_clients 10 --n_adv 2 --noise_multiplier 0.1 --n_rounds 5 --iid True
+python -m federated.main --n_clients 10 --n_adv 2 --noise_multiplier 0.1 --n_rounds 5 --iid True
 ```
 
 To enable differential privacy with epsilon=1.0 and delta=1e-5, add the `--use_differential_privacy`, `--eps`, and `--delta` flags accordingly:
 
 ```bash
-python project/main.py --n_clients 10 --n_adv 2 --noise_multiplier 0.1 --n_rounds 5 --iid True --use_differential_privacy True --eps 1.0 --delta 1e-5
+python -m federated.main --n_clients 10 --n_adv 2 --noise_multiplier 0.1 --n_rounds 5 --iid True --use_differential_privacy True --eps 1.0 --delta 1e-5
 ```
 
 ## Results
