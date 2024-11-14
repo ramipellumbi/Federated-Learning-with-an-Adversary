@@ -7,7 +7,7 @@ class MnistCNN(nn.Module):
     """
 
     def __init__(self, dropout=True):
-        super(MnistCNN, self).__init__()
+        super().__init__()
         self._should_dropout = dropout
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3)
